@@ -14,8 +14,10 @@ This monorepo uses [pnpm](https://pnpm.io/) for package management and [Turborep
 
 ### Prerequisites
 
-- Node.js >= 18
-- pnpm >= 8
+- Node.js >= 22.17.1 (LTS)
+- pnpm >= 10.13.1
+
+> **Note**: This project uses `.nvmrc` to specify the Node.js version. If you use nvm, run `nvm use` to automatically switch to the correct version.
 
 ### Installation
 
@@ -179,6 +181,15 @@ The monorepo uses Turborepo for:
 
 - **pnpm workspaces**: Efficient package management
 - **Catalog**: Shared dependency versions
+- **Renovate**: Automated dependency updates (configured in `renovate.json`)
+
+### Dependency Management
+
+Dependencies are automatically updated using Renovate:
+- **Dev dependencies**: Auto-merged weekly
+- **Production dependencies**: Require manual review
+- **Security updates**: Auto-merged immediately
+- **Major updates**: Scheduled monthly
 
 ## 📄 License
 
