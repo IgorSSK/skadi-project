@@ -1,0 +1,11 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+catalogs:
+  default:
+    "@types/node": "^20.11.16"
+    "typescript": "^5.3.3"
+    "vitest": "^1.2.2"
+    "tsup": "^8.0.2"
+    "@biomejs/biome": "^1.8.3"
