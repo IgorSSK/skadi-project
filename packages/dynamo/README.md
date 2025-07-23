@@ -1,373 +1,280 @@
-# Exemplo de uso com `@skadi/dynamo`
-
-```typescript
-import { Attribute, TableSchema, DynamoDocument } from '@skadi/dynamo';
-
-// Defina o schema da tabela
-const userSchema = new TableSchema({
-  tableName: 'users',
-  definition: {
-    id: Attribute.string().primary(),
-    email: Attribute.string().unique(),
-    name: Attribute.string(),
-    age: Attribute.number().optional(),
-    createdAt: Attribute.date().default(() => new Date()),
-  },
-});
-
-// Instancie o Document Mapper
-const document = new DynamoDocument({
-  schema: userSchema,
-  region: 'us-east-1',
-});
-
-// Criar um novo usuário
-const [_, putError] = await document.put({
-  id: 'user-1',
-  email: 'user1@email.com',
-  name: 'Usuário 1',
-});
-if (putError) throw putError;
-
-// Buscar usuário por chave primária
-const [user, getError] = await document.get({ id: 'user-1' });
-if (getError) throw getError;
-console.log(user);
-
-// Atualizar campos do usuário
-const [__, updateError] = await document.update(
-  { id: 'user-1' },
-  { name: 'Novo Nome', age: 30 }
-);
-if (updateError) throw updateError;
-
-// Remover usuário
-const [___, deleteError] = await document.delete({ id: 'user-1' });
-if (deleteError) throw deleteError;
-
-// Consultar usuários (exemplo de query)
-const [users, queryError] = await document.query({ email: 'user1@email.com' });
-if (queryError) throw queryError;
-console.log(users);
-```
-
-> **Nota:** Certifique-se de que a tabela DynamoDB existe e as credenciais AWS estejam configuradas corretamente no ambiente.
 # @skadi/dynamo
 
-Type-safe DynamoDB document mapper with schema-based operations for Node.js applications.
+A type-safe, schema-first DynamoDB ODM (Object Document Mapper) for TypeScript, designed specifically for Single Table Design patterns.
 
 ## Features
 
-- 🔒 **Type Safety**: Full TypeScript support with schema-based type inference
-- 🚀 **Modern**: Built with ES modules and latest TypeScript features
-- 📝 **Schema Definition**: Declarative schema with automatic type generation
-- ⚡ **Performance**: Optimized for modern Node.js environments
-- 🛠️ **Developer Experience**: Comprehensive IntelliSense and error checking
+- 🔒 **Full Type Safety** - Complete TypeScript support with schema validation using Zod
+- 🏗️ **Single Table Design** - Native support for DynamoDB Single Table Design patterns
+- 🔍 **Schema Validation** - Runtime validation with Zod schemas
+- ⚡ **Performance Optimized** - Built for AWS DynamoDB best practices
+- 🛠️ **Fluent API** - Intuitive, chainable API for all operations
+- 🎯 **GSI Support** - First-class Global Secondary Index support
+- 🔄 **ACID Transactions** - Type-safe transaction support
+- 📄 **Pagination** - Built-in cursor-based pagination
+- 🎛️ **Condition Expressions** - Type-safe condition and filter expressions
 
 ## Installation
 
 ```bash
-npm install @skadi/dynamo
-# or
-pnpm add @skadi/dynamo
-# or
-yarn add @skadi/dynamo
+# pnpm (recommended)
+pnpm add @skadi/dynamo zod
+
+# npm
+npm install @skadi/dynamo zod
+
+# yarn
+yarn add @skadi/dynamo zod
 ```
 
 ## Quick Start
 
-```typescript
-import { TableSchema, DynamoDocument } from '@skadi/dynamo';
-
-// Define your table schema
-const userSchema = TableSchema.create('users', {
-  pk: TableSchema.pk<string>(), // Partition key
-  sk: TableSchema.sk<string>(), // Sort key
-  name: TableSchema.string(),
-  email: TableSchema.string(),
-  age: TableSchema.number(),
-  createdAt: TableSchema.date(),
-});
-
-// Create document mapper
-const document = new DynamoDocument({
-  schema: userSchema,
-  region: 'us-east-1',
-});
-
-// All operations are fully typed based on your schema
-await document.put({
-  pk: 'user#123',
-  sk: 'profile',
-  name: 'John Doe',
-  email: 'john@example.com',
-  age: 30,
-  createdAt: new Date(),
-});
-
-const [user, error] = await document.get({
-  pk: 'user#123',
-  sk: 'profile',
-});
-```
-
-## API Reference
-
-### TableSchema
-
-Create and define your DynamoDB table schema with full type safety.
-
-### DynamoDocument
-
-Main class for performing CRUD operations with automatic type inference.
-
-## Requirements
-
-- Node.js >= 18.0.0
-- TypeScript >= 5.0.0
-
-## License
-
-MIT
-  tableName: 'users',
-  partitionKey: 'id'
-});
-
-// Configure fields
-DocumentConfig.field(User, 'email', {
-  required: true,
-  transform: {
-    set: (value) => value.toLowerCase(),
-  }
-});
-
-DocumentConfig.field(User, 'createdAt', {
-  transform: {
-    get: (value) => new Date(value),
-    set: (value) => value.toISOString(),
-  }
-});
-```
-
-### Operações CRUD
+### 1. Connect to Existing Table
 
 ```typescript
-// Create
-const user = new User({
-  id: 'user-123',
-  email: 'John.Doe@example.com',
-  name: 'John Doe',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-});
+import { Table, Entity, zdynamo } from '@skadi/dynamo';
 
-await user.save();
-
-// Read
-const foundUser = await User.findByKey('user-123');
-
-// Update
-if (foundUser) {
-  foundUser.name = 'John Smith';
-  foundUser.updatedAt = new Date();
-  await foundUser.save();
-}
-
-// Delete
-if (foundUser) {
-  await foundUser.delete();
-}
-```
-
-### Query Builder
-
-```typescript
-import { QueryBuilder } from '@skadi/dynamo';
-
-const queryBuilder = new QueryBuilder(client, 'users')
-  .partitionKey('userId', 'user-123')
-  .sortKeyBeginsWith('email#')
-  .limit(10);
-
-const results = await queryBuilder.execute();
-```
-
-### Schema Builder
-
-```typescript
-import { DocumentSchemaBuilder, StringField, DateField } from '@skadi/dynamo';
-
-const userSchema = new DocumentSchemaBuilder()
-  .addField('id', new StringField({ required: true }))
-  .addField('email', new StringField({ 
-    required: true,
-    transform: (value) => value.toLowerCase()
-  }))
-  .addField('name', new StringField())
-  .addField('createdAt', new DateField({ 
-    defaultValue: () => new Date() 
-  }))
+// Connect to existing DynamoDB table
+const AppTable = Table
+  .connect('my-dynamodb-table')
+  .region('us-east-1')
+  .globalSecondaryIndexes([
+    {
+      alias: 'byStatus',
+      partitionKey: 'gsi_1_pk',
+      sortKey: 'gsi_1_sk',
+      projectionType: 'ALL'
+    }
+  ])
   .build();
 ```
 
-### Template Keys
+### 2. Define Entity Schema
 
 ```typescript
-import { TemplateKeyField } from '@skadi/dynamo';
+import { z } from 'zod';
 
-class UserProfile extends Document {
-  userId: string;
-  profileType: string;
-  profileKey: string; // Generated from template
-}
-
-DocumentConfig.table(UserProfile, {
-  tableName: 'user-profiles',
-  partitionKey: 'userId',
-  sortKey: 'profileKey'
-});
-
-DocumentConfig.field(UserProfile, 'profileKey', {
-  template: 'profile#{profileType}#{userId}'
-});
+const UserEntity = Entity
+  .define('User')
+  .table(AppTable)
+  .schema({
+    // Required partition key
+    pk: zdynamo.partitionKey('USER#{userId}', {
+      userId: zdynamo.uuid()
+    }),
+    
+    // Required sort key (if defined)
+    sk: zdynamo.sortKey('PROFILE#{userId}', {
+      userId: zdynamo.uuid()
+    }),
+    
+    // Entity fields with validation
+    name: z.string().min(1).max(100),
+    email: z.string().email(),
+    age: z.number().int().min(18).max(120),
+    isActive: z.boolean().default(true),
+    
+    // GSI keys
+    gsi_1_pk: zdynamo.gsiPartitionKey('STATUS#{isActive}', {
+      isActive: z.boolean()
+    }),
+    gsi_1_sk: zdynamo.timestamp(),
+    
+    // Automatic timestamps
+    createdAt: zdynamo.timestamp(),
+    updatedAt: zdynamo.timestamp()
+  });
 ```
 
-### Batch Operations
+### 3. CRUD Operations
 
 ```typescript
-import { BatchGetOperation, BatchWriteOperation } from '@skadi/dynamo';
+// CREATE
+const user = await UserEntity
+  .create()
+  .item({
+    pk: { userId: 'user-123' },
+    sk: { userId: 'user-123' },
+    name: 'John Doe',
+    email: 'john@example.com',
+    age: 30,
+    gsi_1_pk: { isActive: true },
+    gsi_1_sk: new Date()
+  })
+  .ifNotExists()
+  .execute();
 
-// Batch get
-const batchGet = new BatchGetOperation(client);
-const results = await batchGet.execute({
-  RequestItems: {
-    'users': {
-      Keys: [
-        { id: 'user-1' },
-        { id: 'user-2' },
-        { id: 'user-3' }
-      ]
-    }
-  }
-});
+// READ
+const user = await UserEntity
+  .get()
+  .key({ userId: 'user-123' })
+  .execute();
 
-// Batch write
-const batchWrite = new BatchWriteOperation(client);
-await batchWrite.execute({
-  RequestItems: {
-    'users': [
-      {
-        PutRequest: {
-          Item: { id: 'user-4', name: 'User Four' }
-        }
-      },
-      {
-        DeleteRequest: {
-          Key: { id: 'user-5' }
-        }
-      }
-    ]
-  }
-});
+// QUERY
+const activeUsers = await UserEntity
+  .query()
+  .index('byStatus')
+  .pk({ isActive: true })
+  .limit(50)
+  .execute();
+
+// UPDATE
+const updatedUser = await UserEntity
+  .update()
+  .key({ userId: 'user-123' })
+  .set({ name: 'Jane Doe', age: 31 })
+  .condition('attribute_exists(pk)')
+  .returnValues('ALL_NEW')
+  .execute();
+
+// DELETE
+await UserEntity
+  .delete()
+  .key({ userId: 'user-123' })
+  .condition('attribute_exists(pk)')
+  .execute();
 ```
 
-### Factory Pattern
+## Advanced Usage
+
+### Complex Schema Validation
 
 ```typescript
-import { createDocumentClass } from '@skadi/dynamo';
-
-interface UserData {
-  id: string;
-  email: string;
-  name: string;
-  createdAt: Date;
-}
-
-const User = createDocumentClass<UserData>('User', {
-  tableName: 'users',
-  partitionKey: 'id'
-}, {
-  email: {
-    required: true,
-    transform: {
-      set: (value) => value.toLowerCase()
-    }
-  },
-  createdAt: {
-    transform: {
-      get: (value) => new Date(value),
-      set: (value) => value.toISOString()
-    }
-  }
-});
-
-const user = User.create({
-  id: 'user-123',
-  email: 'user@example.com',
-  name: 'User Name',
-  createdAt: new Date()
-});
-
-await user.save();
+const AccountEntity = Entity
+  .define('Account')
+  .table(AppTable)
+  .schema({
+    pk: zdynamo.partitionKey('USER#{userId}', {
+      userId: zdynamo.uuid()
+    }),
+    sk: zdynamo.sortKey('ACCOUNT#{accountId}', {
+      accountId: zdynamo.uuid()
+    }),
+    
+    type: z.enum(['CHECKING', 'SAVINGS', 'CREDIT']),
+    balance: z.number().default(0),
+    
+    // Nested object validation
+    settings: z.object({
+      notifications: z.boolean().default(true),
+      overdraftLimit: z.number().min(0).optional(),
+      autoPayments: z.array(z.object({
+        payeeId: z.string().uuid(),
+        amount: z.number().positive(),
+        frequency: z.enum(['WEEKLY', 'MONTHLY'])
+      })).default([])
+    }).optional(),
+    
+    // Array validation
+    tags: z.array(z.string()).default([]),
+    
+    // Custom validation
+    accountNumber: z.string().regex(/^\d{10,12}$/, 'Invalid account number'),
+    
+    // GSI keys for workspace queries
+    gsi_1_pk: zdynamo.gsiPartitionKey('WORKSPACE#{workspaceId}', {
+      workspaceId: zdynamo.uuid()
+    }),
+    gsi_1_sk: zdynamo.gsiSortKey('ACCOUNT#{type}#{createdAt}', {
+      type: z.enum(['CHECKING', 'SAVINGS', 'CREDIT']),
+      createdAt: z.date()
+    })
+  });
 ```
 
 ## API Reference
 
-### Document
+### Schema Helpers (zdynamo)
 
-Base class para documentos DynamoDB com métodos CRUD.
+#### Key Templates
+```typescript
+zdynamo.partitionKey(template: string, params: ZodSchema)
+zdynamo.sortKey(template: string, params: ZodSchema)
+zdynamo.gsiPartitionKey(template: string, params: ZodSchema)
+zdynamo.gsiSortKey(template: string, params: ZodSchema)
+```
 
-#### Métodos de Instância
+#### Common Types
+```typescript
+zdynamo.uuid()                    // UUID validation
+zdynamo.timestamp()               // Date with default now
+zdynamo.currency()                // 3-letter currency code
+zdynamo.entityType(type: string)  // Literal with default
+zdynamo.nonEmptyString()          // String with min length 1
+zdynamo.positiveNumber()          // Number > 0
+zdynamo.email()                   // Email validation
+zdynamo.url()                     // URL validation
+```
 
-- `save(): Promise<this>` - Salva o documento
-- `delete(): Promise<void>` - Deleta o documento
-- `reload(): Promise<this>` - Recarrega do banco
-- `isModified(fieldName?: string): boolean` - Verifica modificações
-- `getModifiedFields(): string[]` - Lista campos modificados
-- `toJSON(): Record<string, unknown>` - Converte para objeto
+### Table Connection
+```typescript
+Table.connect(tableName: string)
+  .region(region: string)
+  .client(client: DynamoDBDocumentClient)
+  .transform({ caseStyle: 'snake_case', timestamps: boolean })
+  .globalSecondaryIndexes(indexes: GSIDefinition[])
+  .build()
+```
 
-#### Métodos Estáticos
+### Entity Definition
+```typescript
+Entity.define(name: string)
+  .table(table: ConnectedTable)
+  .schema(schema: EntitySchemaDefinition)
+```
 
-- `create<T>(data: Record<string, unknown>): T` - Cria nova instância
-- `findByKey<T>(pk: unknown, sk?: unknown): Promise<T | null>` - Busca por chave
+## Error Handling
 
-### DocumentConfig
+```typescript
+import { 
+  EntityValidationError,
+  MissingKeyError,
+  DynamoOperationError,
+  isSkadiDynamoError
+} from '@skadi/dynamo';
 
-Utilitário para configurar metadados de documentos.
+try {
+  await UserEntity.create().item(invalidData).execute();
+} catch (error) {
+  if (isSkadiDynamoError(error)) {
+    switch (error.code) {
+      case 'ENTITY_VALIDATION_ERROR':
+        // Handle validation errors
+        break;
+      case 'MISSING_KEY_ERROR':
+        // Handle missing key errors  
+        break;
+      default:
+        // Handle other Skadi errors
+    }
+  }
+}
+```
 
-- `table(target, options)` - Configura tabela
-- `field(target, propertyKey, options)` - Configura campo
-- `partitionKey(target, propertyKey, attributeName?)` - Configura partition key
-- `sortKey(target, propertyKey, attributeName?)` - Configura sort key
+## Best Practices
 
-### Query Builders
+### 1. Schema Design
+- Use descriptive entity types
+- Include all GSI keys in your schema
+- Validate all business rules with Zod
+- Use templates for consistent key formats
 
-#### QueryBuilder
+### 2. Query Patterns
+- Design GSIs for your access patterns
+- Use meaningful aliases for GSIs
+- Implement proper pagination
+- Add appropriate filters to reduce data transfer
 
-- `partitionKey(key, value)` - Define partition key
-- `sortKey(key, value)` - Define sort key exato
-- `sortKeyBeginsWith(key, prefix)` - Sort key começa com
-- `sortKeyBetween(key, start, end)` - Sort key entre valores
-- `filter(expression)` - Adiciona filtro
-- `limit(count)` - Limita resultados
-- `scanIndexForward(forward)` - Ordem dos resultados
-- `execute()` - Executa query
+### 3. Type Safety
+- Export and reuse type definitions
+- Use the automatically inferred types
+- Validate input at service boundaries
+- Handle errors appropriately
 
-#### ScanBuilder
+## Examples
 
-- `filter(expression)` - Adiciona filtro
-- `limit(count)` - Limita resultados
-- `segment(segment, totalSegments)` - Scan paralelo
-- `execute()` - Executa scan
+See the complete [example implementation](src/example.ts) for a full-featured account management system demonstrating all features of the library.
 
-## Contribuição
+## License
 
-1. Fork o projeto
-2. Crie uma feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
-## Licença
-
-MIT
+MIT © Skadi Team
