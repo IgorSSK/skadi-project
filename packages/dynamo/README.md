@@ -90,7 +90,7 @@ const UserEntity = Entity
 
 ```typescript
 // CREATE
-const user = await UserEntity
+const [newUser, createError] = await UserEntity
   .create()
   .item({
     pk: { userId: 'user-123' },
@@ -104,22 +104,47 @@ const user = await UserEntity
   .ifNotExists()
   .execute();
 
+if (createError) {
+  console.error('Failed to create user:', createError);
+  return;
+}
+
+console.log('User created:', newUser);
+
 // READ
-const user = await UserEntity
+const [user, getError] = await UserEntity
   .get()
   .key({ userId: 'user-123' })
   .execute();
 
+if (getError) {
+  console.error('Failed to get user:', getError);
+  return;
+}
+
+if (user) {
+  console.log('User found:', user);
+} else {
+  console.log('User not found.');
+}
+
 // QUERY
-const activeUsers = await UserEntity
+const [activeUsers, queryError] = await UserEntity
   .query()
   .index('byStatus')
   .pk({ isActive: true })
   .limit(50)
   .execute();
 
+if (queryError) {
+  console.error('Failed to query users:', queryError);
+  return;
+}
+
+console.log('Active users:', activeUsers);
+
 // UPDATE
-const updatedUser = await UserEntity
+const [updatedUser, updateError] = await UserEntity
   .update()
   .key({ userId: 'user-123' })
   .set({ name: 'Jane Doe', age: 31 })
@@ -127,12 +152,26 @@ const updatedUser = await UserEntity
   .returnValues('ALL_NEW')
   .execute();
 
+if (updateError) {
+  console.error('Failed to update user:', updateError);
+  return;
+}
+
+console.log('User updated:', updatedUser);
+
 // DELETE
-await UserEntity
+const [result, deleteError] = await UserEntity
   .delete()
   .key({ userId: 'user-123' })
   .condition('attribute_exists(pk)')
   .execute();
+
+if (deleteError) {
+  console.error('Failed to delete user:', deleteError);
+  return;
+}
+
+console.log('User deleted successfully.');
 ```
 
 ## Advanced Usage
@@ -225,28 +264,39 @@ Entity.define(name: string)
 
 ## Error Handling
 
+All data operations, such as `create`, `get`, `query`, `update`, and `delete`, return a tuple `[data, error]`. If the operation is successful, `data` will contain the result and `error` will be `null`. If an error occurs, `data` will be `null` and `error` will be an instance of a Skadi-specific error.
+
+You can use the `isSkadiDynamoError` type guard to safely handle different types of errors.
+
 ```typescript
 import { 
-  EntityValidationError,
-  MissingKeyError,
-  DynamoOperationError,
   isSkadiDynamoError
 } from '@skadi/dynamo';
 
-try {
-  await UserEntity.create().item(invalidData).execute();
-} catch (error) {
+const [user, error] = await UserEntity.create().item(invalidData).execute();
+
+if (error) {
   if (isSkadiDynamoError(error)) {
     switch (error.code) {
       case 'ENTITY_VALIDATION_ERROR':
         // Handle validation errors
+        console.error('Validation failed:', error.details);
         break;
       case 'MISSING_KEY_ERROR':
         // Handle missing key errors  
+        console.error('A required key is missing:', error.message);
+        break;
+      case 'DYNAMO_OPERATION_ERROR':
+        // Handle native DynamoDB errors
+        console.error('DynamoDB error:', error.cause);
         break;
       default:
         // Handle other Skadi errors
+        console.error('An unexpected Skadi error occurred:', error);
     }
+  } else {
+    // Handle non-Skadi errors
+    console.error('An unexpected error occurred:', error);
   }
 }
 ```
@@ -273,7 +323,7 @@ try {
 
 ## Examples
 
-See the complete [example implementation](src/example.ts) for a full-featured account management system demonstrating all features of the library.
+See the complete [example implementation](../../apps/example/src/dynamo-demo.ts) for a full-featured account management system demonstrating all features of the library.
 
 ## License
 
