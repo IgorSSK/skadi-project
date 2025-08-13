@@ -5,83 +5,153 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: 22
+  PNPM_VERSION: 10
+  MIN_COVERAGE: 80
 
 jobs:
   test:
-    name: Test & Build
+    name: Quality (Lint, Type Check, Test, Build)
     runs-on: ubuntu-latest
     strategy:
       matrix:
         node-version: [20, 22]
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 10
-
+          version: ${{ env.PNPM_VERSION }}
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
       - name: Run linting
         run: pnpm lint
-
       - name: Run type checking
         run: pnpm type-check
-
-      - name: Run tests
-        run: pnpm test
-
+      - name: Run tests with coverage
+        run: pnpm test -- --coverage
+      - name: Enforce coverage threshold
+        run: |
+          TOTAL=$(node -e "const f=require('./coverage/coverage-summary.json');console.log(f.total.statements.pct)")
+          echo "Total coverage: $TOTAL%"
+          awk -v t=$TOTAL -v min=${{ env.MIN_COVERAGE }} 'BEGIN{ if (t+0 < min+0) { print "Coverage below minimum ("t" < "min")"; exit 1 } }'
       - name: Build packages
         run: pnpm build
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-packages
+          path: |
+            packages/**/dist
+          if-no-files-found: error
 
-  release:
-    name: Release
+  changeset-version:
+    name: Apply Changesets Versioning
     needs: test
-    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 10
-
+          version: ${{ env.PNPM_VERSION }}
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: 'pnpm'
-          registry-url: 'https://registry.npmjs.org'
-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Build packages
-        run: pnpm build
-
-      - name: Create Release Pull Request or Publish
+      - name: Create Release Pull Request or Publish (dry)
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: pnpm release
-          title: 'chore: release packages'
-          commit: 'chore: release packages'
+          version: pnpm version-packages
+          commit: "chore: version packages"
+          title: "chore: version packages"
+          publish: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  release-npm:
+    name: Publish to npmjs
+    needs: [test, changeset-version]
+    if: github.ref == 'refs/heads/main' && needs.changeset-version.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build packages
+        run: pnpm build
+      - name: Publish to npm (Changesets)
+        run: pnpm release:npm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  release-github-packages:
+    name: Publish to GitHub Packages
+    needs: [release-npm]
+    if: github.ref == 'refs/heads/main' && needs.release-npm.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@skadi"
+      - name: Configure .npmrc for GitHub Packages
+        run: |
+          echo "@skadi:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> .npmrc
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build packages
+        run: pnpm build
+      - name: Publish packages to GitHub Packages
+        run: pnpm release:github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

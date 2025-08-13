@@ -5,14 +5,14 @@
   "description": "Type-safe DynamoDB document mapper with schema-based operations",
   "author": "Skadi Team",
   "license": "MIT",
-  "homepage": "https://github.com/your-org/skadi/tree/main/packages/dynamo",
+  "homepage": "https://github.com/IgorSSK/skadi-project/tree/main/packages/dynamo",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/skadi.git",
+    "url": "https://github.com/IgorSSK/skadi-project.git",
     "directory": "packages/dynamo"
   },
   "bugs": {
-    "url": "https://github.com/your-org/skadi/issues"
+    "url": "https://github.com/IgorSSK/skadi-project/issues"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -78,6 +78,7 @@
     "typescript": ">=5.0.0"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   }
 }

@@ -1,5 +1,14 @@
 # @skadi/dynamo
 
+<p align="center">
+  <a href="https://github.com/IgorSSK/skadi-project/actions/workflows/ci.yml"><img src="https://github.com/IgorSSK/skadi-project/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://www.npmjs.com/package/@skadi/dynamo"><img src="https://img.shields.io/npm/v/@skadi/dynamo" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/@skadi/dynamo"><img src="https://img.shields.io/npm/dm/@skadi/dynamo" alt="downloads" /></a>
+  <a href="https://github.com/IgorSSK/skadi-project/blob/main/LICENSE"><img src="https://img.shields.io/github/license/IgorSSK/skadi-project" alt="license" /></a>
+  <a href="https://bundlephobia.com/package/@skadi/dynamo"><img src="https://img.shields.io/bundlephobia/minzip/@skadi/dynamo" alt="bundle size" /></a>
+  <a href="https://github.com/changesets/changesets"><img src="https://img.shields.io/badge/managed%20by-changesets-4B32C3" alt="changesets" /></a>
+</p>
+
 A type-safe, schema-first DynamoDB ODM (Object Document Mapper) for TypeScript, designed specifically for Single Table Design patterns.
 
 ## Features
@@ -16,15 +25,20 @@ A type-safe, schema-first DynamoDB ODM (Object Document Mapper) for TypeScript, 
 
 ## Installation
 
-```bash
-# pnpm (recommended)
-pnpm add @skadi/dynamo zod
+### npm (public registry)
+```
+pnpm add @skadi/dynamo
+```
 
-# npm
-npm install @skadi/dynamo zod
-
-# yarn
-yarn add @skadi/dynamo zod
+### GitHub Packages
+Adicione ao seu `.npmrc`:
+```
+@skadi:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+Instale:
+```
+pnpm add @skadi/dynamo
 ```
 
 ## Quick Start

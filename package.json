@@ -20,7 +20,10 @@
     "clean": "turbo run clean && rm -rf node_modules",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "pnpm build && changeset publish"
+    "release:npm": "pnpm build && changeset publish",
+    "release:github": "pnpm build && pnpm -r --filter ./packages/* exec npm publish --access public --registry=https://npm.pkg.github.com",
+    "release:all": "pnpm release:npm && pnpm release:github",
+    "release": "pnpm release:all"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.1.4",
