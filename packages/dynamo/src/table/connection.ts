@@ -4,69 +4,85 @@ import {
 } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 import type { GSIDefinition } from '../types.js';
+import type { CaseTransformer } from '../utils/transformer.js';
+
+export interface TableOptions {
+  caseStyle?: CaseTransformer;
+  clientConfig?: DynamoDBClientConfig;
+}
 
 export interface ConnectedTable {
   tableName: string;
-  documentClient: DynamoDBDocumentClient;
+  client: DynamoDBDocumentClient;
   gsis: GSIDefinition[];
-  getIndexByAlias(alias: string): GSIDefinition | undefined;
+  options: TableOptions;
+  getGsiByAlias(alias: string): GSIDefinition | undefined;
 }
 
 export class Table {
-  private _tableName?: string;
-  private _documentClient?: DynamoDBDocumentClient;
-  private _clientConfig?: DynamoDBClientConfig;
-  private _gsis: GSIDefinition[] = [];
+  private tableName?: string;
+  private clientInstance?: DynamoDBDocumentClient;
+  private gsiList: GSIDefinition[] = [];
+  private tableOptions: TableOptions = {};
 
-  /** Set the table name */
-  public static connect(tableName: string) {
-    const t = new Table();
-    t._tableName = tableName;
-    return t;
+  /** Inicializa a conexão com o nome da tabela e região opcional */
+  public static connect(name: string, region?: string) {
+    const table = new Table();
+    table.tableName = name;
+    if (region) {
+      table.tableOptions.clientConfig = { region };
+    }
+    return table;
   }
 
-  /** Optionally set a custom DynamoDBDocumentClient */
-  public documentClient(client: DynamoDBDocumentClient) {
-    this._documentClient = client;
+  /** Define configurações do cliente DynamoDB */
+  public config(config: DynamoDBClientConfig) {
+    this.tableOptions.clientConfig = config;
     return this;
   }
 
-  /** Optionally set a custom DynamoDBClientConfig */
-  public clientConfig(config: DynamoDBClientConfig) {
-    this._clientConfig = config;
+  /** Define uma instância customizada do DynamoDBDocumentClient */
+  public client(client: DynamoDBDocumentClient) {
+    this.clientInstance = client;
     return this;
   }
 
-  /** Optionally set GSIs */
+  /** Define as GSIs da tabela */
   public gsis(gsis: GSIDefinition[]) {
-    this._gsis = gsis;
+    this.gsiList = gsis;
+    return this;
+  }
+
+  /** Define opções adicionais da tabela */
+  public options(options: TableOptions) {
+    this.tableOptions = options;
     return this;
   }
 
   /**
-   * Builds the final, immutable ConnectedTable object.
-   * If no region or client has been configured, it will create a default DynamoDB client.
+   * Constrói o objeto ConnectedTable final e imutável.
+   * Se nenhum client for definido, cria um padrão.
    */
   public build(): ConnectedTable {
-    if (!this._tableName) {
+    if (!this.tableName) {
       throw new Error(
-        'Table name is required. Use Table.connect(tableName) to set it.'
+        'Table name is required. Use Table.connect(name) to set it.'
       );
     }
 
-    if (!this._documentClient) {
-      this._documentClient = DynamoDBDocumentClient.from(
-        new DynamoDBClient(this._clientConfig ?? {})
+    const client =
+      this.clientInstance ??
+      DynamoDBDocumentClient.from(
+        new DynamoDBClient(this.tableOptions.clientConfig ?? {})
       );
-    }
 
     return {
-      tableName: this._tableName,
-      documentClient: this._documentClient,
-      gsis: this._gsis,
-      getIndexByAlias(alias: string) {
-        return this.gsis.find(gsi => gsi.alias === alias);
-      },
+      tableName: this.tableName,
+      client,
+      gsis: this.gsiList,
+      options: this.tableOptions,
+      getGsiByAlias: (alias: string) =>
+        this.gsiList.find(gsi => gsi.alias === alias),
     };
   }
 }

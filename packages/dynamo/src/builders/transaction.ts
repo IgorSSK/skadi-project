@@ -7,6 +7,7 @@ import type { ConnectedTable } from '../table/connection.js';
 
 import { DynamoOperationError } from '../errors.js';
 import type { EntitySchemaDefinition, TransactionResult } from '../types.js';
+import { serialize } from '../utils/transformer.js';
 import { BaseBuilder, type DynamoResult } from './base-builder.js';
 
 export class EntityTransactionBuilder<
@@ -21,10 +22,14 @@ export class EntityTransactionBuilder<
   }
 
   put(item: z.input<TSchema>) {
+    const serializedItem = serialize(
+      this.schema.parse(item),
+      this.table.options.caseStyle
+    );
     this._writes.push({
       Put: {
         TableName: this.table.tableName,
-        Item: this.schema.parse(item),
+        Item: serializedItem,
       },
     });
     return this;
@@ -46,12 +51,17 @@ export class EntityTransactionBuilder<
       dynamoKey.sk = skValue;
     }
 
+    const serializedUpdates = serialize(
+      updates,
+      this.table.options.caseStyle
+    ) as Record<string, unknown>;
+
     // Simple SET update only
-    const updateKeys = Object.keys(updates);
+    const updateKeys = Object.keys(serializedUpdates);
     const updateExpr = updateKeys.map(k => `#${k} = :${k}`).join(', ');
     const exprAttrNames = Object.fromEntries(updateKeys.map(k => [`#${k}`, k]));
     const exprAttrValues = Object.fromEntries(
-      updateKeys.map(k => [`:${k}`, (updates as Record<string, unknown>)[k]])
+      updateKeys.map(k => [`:${k}`, serializedUpdates[k]])
     );
     this._writes.push({
       Update: {
@@ -89,7 +99,7 @@ export class EntityTransactionBuilder<
     return this;
   }
 
-  async execute(): Promise<DynamoResult<TransactionResult>> {
+  async exec(): Promise<DynamoResult<TransactionResult>> {
     if (!this._writes.length) {
       return [null, new DynamoOperationError('No transaction writes provided')];
     }

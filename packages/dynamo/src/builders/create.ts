@@ -3,6 +3,7 @@ import type { z } from 'zod';
 import { EntityValidationError, MissingKeyError } from '../errors.js';
 import type { ConnectedTable } from '../table/connection.js';
 import type { EntitySchemaDefinition } from '../types.js';
+import { serialize } from '../utils/transformer.js';
 import { BaseBuilder, type DynamoResult } from './base-builder.js';
 
 export class EntityCreateBuilder<
@@ -27,16 +28,17 @@ export class EntityCreateBuilder<
     return this;
   }
 
-  async execute(): Promise<DynamoResult<z.TypeOf<TSchema>>> {
+  async exec(): Promise<DynamoResult<z.TypeOf<TSchema>>> {
     if (!this._item) {
       return [
         null,
         new MissingKeyError('No item provided for create operation.'),
       ];
     }
+    const serializedItem = serialize(this._item, this.table.options.caseStyle);
     const params: PutCommandInput = {
       TableName: this.table.tableName,
-      Item: this._item,
+      Item: serializedItem,
     };
     if (this._condition) {
       params.ConditionExpression = this._condition;

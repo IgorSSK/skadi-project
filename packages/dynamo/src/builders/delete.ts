@@ -1,13 +1,18 @@
-import { DeleteCommand, type DeleteCommandInput } from '@aws-sdk/lib-dynamodb';
+import {
+  DeleteCommand,
+  type DeleteCommandInput,
+  type DeleteCommandOutput,
+} from '@aws-sdk/lib-dynamodb';
 import type { z } from 'zod';
 import { MissingKeyError } from '../errors.js';
 import type { ConnectedTable } from '../table/connection.js';
 import type { EntitySchemaDefinition } from '../types.js';
+import { deserialize } from '../utils/transformer.js';
 import { BaseBuilder, type DynamoResult } from './base-builder.js';
 
 export class EntityDeleteBuilder<
   TSchema extends z.ZodObject<EntitySchemaDefinition>,
-> extends BaseBuilder<Record<string, unknown>> {
+> extends BaseBuilder<Record<string, unknown> | null> {
   private _key: Record<string, unknown> | undefined;
   private _condition?: string;
   private schema: TSchema;
@@ -40,7 +45,7 @@ export class EntityDeleteBuilder<
     return this;
   }
 
-  async execute(): Promise<DynamoResult<Record<string, unknown>>> {
+  async exec(): Promise<DynamoResult<Record<string, unknown> | null>> {
     if (!this._key) {
       return [
         null,
@@ -50,12 +55,22 @@ export class EntityDeleteBuilder<
     const params: DeleteCommandInput = {
       TableName: this.table.tableName,
       Key: this._key,
+      ReturnValues: 'ALL_OLD',
     };
     if (this._condition) {
       params.ConditionExpression = this._condition;
     }
-    const [_, opErr] = await this.send(new DeleteCommand(params));
+    const [output, opErr] = await this.send<DeleteCommandOutput>(
+      new DeleteCommand(params)
+    );
     if (opErr) return [null, opErr];
-    return [this._key, null];
+
+    if (!output?.Attributes) {
+      return [null, null];
+    }
+
+    const deserialized = deserialize(output.Attributes, this.schema);
+
+    return [deserialized, null];
   }
 }

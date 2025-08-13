@@ -3,7 +3,7 @@ import {
   type GetCommandInput,
   type GetCommandOutput,
 } from '@aws-sdk/lib-dynamodb';
-import type { z } from 'zod';
+import { ZodError, type z } from 'zod';
 import {
   type DynamoOperationError,
   EntityValidationError,
@@ -11,6 +11,7 @@ import {
 } from '../errors.js';
 import type { ConnectedTable } from '../table/connection.js';
 import type { EntitySchemaDefinition } from '../types.js';
+import { deserialize } from '../utils/transformer.js';
 import { BaseBuilder } from './base-builder.js';
 
 export class EntityGetBuilder<
@@ -42,7 +43,7 @@ export class EntityGetBuilder<
     return this;
   }
 
-  async execute(): Promise<
+  async exec(): Promise<
     [z.TypeOf<TSchema> | null, DynamoOperationError | null]
   > {
     if (!this._key) {
@@ -61,15 +62,15 @@ export class EntityGetBuilder<
     if (opErr) return [null, opErr];
     if (!output || !('Item' in output) || !output.Item) return [null, null];
     try {
-      const parsed = this.schema.parse(output.Item);
+      const deserialized = deserialize(output.Item, this.schema);
+      const parsed = this.schema.parse(deserialized);
       return [parsed, null];
     } catch (err) {
+      const issues =
+        err instanceof ZodError ? (err as ZodError).issues : undefined;
       return [
         null,
-        new EntityValidationError(
-          'Entity validation failed',
-          (err as any)?.issues
-        ),
+        new EntityValidationError('Entity validation failed', issues),
       ];
     }
   }

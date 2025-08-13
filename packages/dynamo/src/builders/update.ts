@@ -3,10 +3,11 @@ import {
   type UpdateCommandInput,
   type UpdateCommandOutput,
 } from '@aws-sdk/lib-dynamodb';
-import type { z } from 'zod';
+import { ZodError, type z } from 'zod';
 import { EntityValidationError, MissingKeyError } from '../errors.js';
 import type { ConnectedTable } from '../table/connection.js';
 import type { EntitySchemaDefinition } from '../types.js';
+import { deserialize, serialize } from '../utils/transformer.js';
 import { BaseBuilder, type DynamoResult } from './base-builder.js';
 
 export class EntityUpdateBuilder<
@@ -50,7 +51,7 @@ export class EntityUpdateBuilder<
     return this;
   }
 
-  async execute(): Promise<DynamoResult<z.infer<TSchema> | null>> {
+  async exec(): Promise<DynamoResult<z.infer<TSchema> | null>> {
     if (!this._key || !this._updates) {
       return [
         null,
@@ -59,14 +60,20 @@ export class EntityUpdateBuilder<
         ),
       ];
     }
+
+    const serializedUpdates = serialize(
+      this._updates,
+      this.table.options.caseStyle
+    );
+
     // Build UpdateExpression and ExpressionAttributeValues
-    const updateKeys = Object.keys(this._updates);
+    const updateKeys = Object.keys(serializedUpdates);
     const updateExpr = updateKeys.map(k => `#${k} = :${k}`).join(', ');
     const exprAttrNames = Object.fromEntries(updateKeys.map(k => [`#${k}`, k]));
     const exprAttrValues = Object.fromEntries(
       updateKeys.map(k => [
         `:${k}`,
-        (this._updates as Record<string, unknown>)[k],
+        (serializedUpdates as Record<string, unknown>)[k],
       ])
     );
     const params: UpdateCommandInput = {
@@ -87,15 +94,15 @@ export class EntityUpdateBuilder<
     if (!output || !('Attributes' in output) || !output.Attributes)
       return [null, null];
     try {
-      const parsed = this.schema.parse(output.Attributes);
+      const deserialized = deserialize(output.Attributes, this.schema);
+      const parsed = this.schema.parse(deserialized);
       return [parsed, null];
     } catch (err) {
+      const issues =
+        err instanceof ZodError ? (err as ZodError).issues : undefined;
       return [
         null,
-        new EntityValidationError(
-          'Entity validation failed',
-          (err as any)?.issues
-        ),
+        new EntityValidationError('Entity validation failed', issues),
       ];
     }
   }

@@ -26,11 +26,18 @@ export const zdynamo = {
     params: T
   ) => {
     const paramSchema = z.object(params);
-    return paramSchema.transform(values =>
-      template.replace(/{(\w+)}/g, (_, key) =>
+    const effect = paramSchema.transform(values =>
+      template.replace(/\{(\w+)\}/g, (_, key) =>
         String(values[key as keyof typeof values])
       )
     );
+    // Attach metadata to be used during deserialization
+    (
+      effect as z.ZodTypeAny & {
+        _skadiKeyMeta?: { template: string; params: typeof paramSchema };
+      }
+    )._skadiKeyMeta = { template, params: paramSchema };
+    return effect;
   },
 
   /**
@@ -52,11 +59,17 @@ export const zdynamo = {
     params: T
   ) => {
     const paramSchema = z.object(params);
-    return paramSchema.transform(values =>
-      template.replace(/{(\w+)}/g, (_, key) =>
+    const effect = paramSchema.transform(values =>
+      template.replace(/\{(\w+)\}/g, (_, key) =>
         String(values[key as keyof typeof values])
       )
     );
+    (
+      effect as z.ZodTypeAny & {
+        _skadiKeyMeta?: { template: string; params: typeof paramSchema };
+      }
+    )._skadiKeyMeta = { template, params: paramSchema };
+    return effect;
   },
 
   /**

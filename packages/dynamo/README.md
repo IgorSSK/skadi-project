@@ -102,7 +102,7 @@ const [newUser, createError] = await UserEntity
     gsi_1_sk: new Date()
   })
   .ifNotExists()
-  .execute();
+  .exec();
 
 if (createError) {
   console.error('Failed to create user:', createError);
@@ -115,7 +115,7 @@ console.log('User created:', newUser);
 const [user, getError] = await UserEntity
   .get()
   .key({ userId: 'user-123' })
-  .execute();
+  .exec();
 
 if (getError) {
   console.error('Failed to get user:', getError);
@@ -134,7 +134,7 @@ const [activeUsers, queryError] = await UserEntity
   .index('byStatus')
   .pk({ isActive: true })
   .limit(50)
-  .execute();
+  .exec();
 
 if (queryError) {
   console.error('Failed to query users:', queryError);
@@ -150,7 +150,7 @@ const [updatedUser, updateError] = await UserEntity
   .set({ name: 'Jane Doe', age: 31 })
   .condition('attribute_exists(pk)')
   .returnValues('ALL_NEW')
-  .execute();
+  .exec();
 
 if (updateError) {
   console.error('Failed to update user:', updateError);
@@ -164,7 +164,7 @@ const [result, deleteError] = await UserEntity
   .delete()
   .key({ userId: 'user-123' })
   .condition('attribute_exists(pk)')
-  .execute();
+  .exec();
 
 if (deleteError) {
   console.error('Failed to delete user:', deleteError);
@@ -273,7 +273,7 @@ import {
   isSkadiDynamoError
 } from '@skadi/dynamo';
 
-const [user, error] = await UserEntity.create().item(invalidData).execute();
+const [user, error] = await UserEntity.create().item(invalidData).exec();
 
 if (error) {
   if (isSkadiDynamoError(error)) {

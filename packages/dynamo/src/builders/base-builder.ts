@@ -39,10 +39,8 @@ export abstract class BaseBuilder<TResult> {
     command: DynamoDBBuilderCommand
   ): Promise<DynamoResult<TOutput>> {
     try {
-      const result = await this.table.documentClient.send(
-        command as unknown as Parameters<
-          typeof this.table.documentClient.send
-        >[0]
+      const result = await this.table.client.send(
+        command as unknown as Parameters<typeof this.table.client.send>[0]
       );
       return [result as TOutput, null];
     } catch (error: unknown) {
@@ -58,5 +56,5 @@ export abstract class BaseBuilder<TResult> {
   /**
    * Executes the operation and returns the result.
    */
-  public abstract execute(): Promise<DynamoResult<TResult>>;
+  public abstract exec(): Promise<DynamoResult<TResult>>;
 }

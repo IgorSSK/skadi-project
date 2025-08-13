@@ -3,9 +3,10 @@ import {
   type QueryCommandInput,
   type QueryCommandOutput,
 } from '@aws-sdk/lib-dynamodb';
-import type { z } from 'zod';
+import { z } from 'zod';
 import type { ConnectedTable } from '../table/connection.js';
 import type { EntitySchemaDefinition, QueryResult } from '../types.js';
+import { deserialize } from '../utils/transformer.js';
 
 /**
  * Builder for querying DynamoDB items
@@ -34,11 +35,13 @@ export class EntityQueryBuilder<
    * ```typescript
    * const results = await Entity.query()
    *   .pk({ userId: 'user-123' })
-   *   .execute();
+   *   .exec();
    * ```
    */
   pk(pkData: z.input<TSchema['shape']['pk']>) {
-    return new QueryKeyBuilder(this.table, this.schema, pkData, undefined);
+    // Parse template-based pk (e.g. { userId: 'x' } -> 'USER#x') before querying
+    const parsedPk = this.schema.shape.pk.parse(pkData);
+    return new QueryKeyBuilder(this.table, this.schema, parsedPk, undefined);
   }
 
   /**
@@ -53,11 +56,11 @@ export class EntityQueryBuilder<
    * const results = await Entity.query()
    *   .index('byStatus')
    *   .pk({ status: 'ACTIVE' })
-   *   .execute();
+   *   .exec();
    * ```
    */
   index(indexAlias: string) {
-    const gsiConfig = this.table.getIndexByAlias(indexAlias);
+    const gsiConfig = this.table.getGsiByAlias(indexAlias);
     if (!gsiConfig) {
       throw new Error(`GSI with alias '${indexAlias}' not found`);
     }
@@ -90,18 +93,28 @@ class QueryKeyBuilder<
   private ascending = true;
   private schema: TSchema;
   private pkData: unknown;
-  private indexAlias?: string;
+  private gsiConfig?: {
+    indexName: string;
+    alias: string;
+    partitionKey: string;
+    sortKey?: string;
+  };
 
   constructor(
     table: ConnectedTable,
     schema: TSchema,
     pkData: unknown,
-    indexAlias?: string
+    gsiConfig?: {
+      indexName: string;
+      alias: string;
+      partitionKey: string;
+      sortKey?: string;
+    }
   ) {
     super(table);
     this.schema = schema;
     this.pkData = pkData;
-    this.indexAlias = indexAlias;
+    this.gsiConfig = gsiConfig;
   }
 
   /**
@@ -228,26 +241,46 @@ class QueryKeyBuilder<
    *   .pk({ userId: 'user-123' })
    *   .filter('isActive', '=', true)
    *   .limit(10)
-   *   .execute();
+   *   .exec();
    *
    * console.log(result.items);    // Array of matching items
    * console.log(result.cursor);   // Pagination cursor for next page
    * ```
    */
-  async execute(): Promise<DynamoResult<QueryResult<z.infer<TSchema>>>> {
+  async exec(): Promise<DynamoResult<QueryResult<z.infer<TSchema>>>> {
+    // Determine attribute names (base table vs GSI)
+    const pkAttr = this.gsiConfig ? this.gsiConfig.partitionKey : 'pk';
+    const skAttr = this.gsiConfig ? this.gsiConfig.sortKey || 'sk' : 'sk';
+
     // Build KeyConditionExpression
     let keyExpr = '#pk = :pk';
-    const exprAttrNames: Record<string, string> = { '#pk': 'pk' };
+    const exprAttrNames: Record<string, string> = { '#pk': pkAttr };
     const exprAttrValues: Record<string, unknown> = { ':pk': this.pkData };
     for (const cond of this.conditions) {
       if (cond.field === 'sk') {
         if (cond.operator === 'begins_with') {
           keyExpr += ' AND begins_with(#sk, :sk)';
-          exprAttrNames['#sk'] = 'sk';
+          exprAttrNames['#sk'] = skAttr;
           exprAttrValues[':sk'] = cond.value;
-        } else {
+        } else if (cond.operator === 'between') {
+          // between stored as two conditions (first plus 'and') in existing logic
+          // We'll adapt: first entry has operator 'between' value=v1, second has operator 'and' value=v2
+          // Reconstruct between when both present
+          const firstVal = cond.value;
+          const secondCond = this.conditions.find(c => c.operator === 'and');
+          if (secondCond) {
+            keyExpr += ' AND #sk BETWEEN :sk1 AND :sk2';
+            exprAttrNames['#sk'] = skAttr;
+            exprAttrValues[':sk1'] = firstVal;
+            exprAttrValues[':sk2'] = secondCond.value;
+          } else {
+            keyExpr += ' AND #sk BETWEEN :sk AND :sk2'; // fallback if structure unexpected
+            exprAttrNames['#sk'] = skAttr;
+            exprAttrValues[':sk'] = firstVal;
+          }
+        } else if (cond.operator !== 'and') {
           keyExpr += ` AND #sk ${cond.operator} :sk`;
-          exprAttrNames['#sk'] = 'sk';
+          exprAttrNames['#sk'] = skAttr;
           exprAttrValues[':sk'] = cond.value;
         }
       }
@@ -287,8 +320,8 @@ class QueryKeyBuilder<
       Limit: this.limitValue,
       ScanIndexForward: this.ascending,
     };
-    if (this.indexAlias) {
-      params.IndexName = this.indexAlias;
+    if (this.gsiConfig) {
+      params.IndexName = this.gsiConfig.indexName;
     }
     if (filterExpr) {
       params.FilterExpression = filterExpr;
@@ -303,11 +336,7 @@ class QueryKeyBuilder<
     try {
       const items = (output?.Items ?? []).map(
         (item: Record<string, unknown>) => {
-          const deserialized =
-            require('../utils/deserialize.js').deserializeItem(
-              item,
-              this.schema.shape
-            );
+          const deserialized = deserialize(item, this.schema);
           return this.schema.parse(deserialized);
         }
       );
@@ -328,7 +357,7 @@ class QueryKeyBuilder<
         null,
         new EntityValidationError(
           'Entity validation failed',
-          (err as any)?.issues
+          err instanceof z.ZodError ? err.issues : undefined
         ),
       ];
     }
@@ -354,7 +383,7 @@ class QueryKeyBuilder<
         let cursor: string | undefined;
 
         do {
-          const [result, error] = await this.cursor(cursor).execute();
+          const [result, error] = await this.cursor(cursor).exec();
           if (error) throw error;
           if (!result) break;
 
@@ -400,15 +429,31 @@ class QueryIndexBuilder<TSchema extends z.ZodObject<EntitySchemaDefinition>> {
    *   .pk({ status: 'ACTIVE' })
    *   .sortBy('DESC')
    *   .limit(20)
-   *   .execute();
+   *   .exec();
    * ```
    */
   pk(pkData: unknown) {
-    return new QueryKeyBuilder(
-      this.table,
-      this.schema,
-      pkData,
-      (this.gsiConfig as { alias: string }).alias
-    );
+    // Attempt to parse using matching GSI pk field in schema if available
+    let parsedPk: unknown = pkData;
+    const gsi = this.gsiConfig as {
+      indexName: string;
+      alias: string;
+      partitionKey: string;
+      sortKey?: string;
+    };
+    for (const [fieldName, fieldSchema] of Object.entries(this.schema.shape)) {
+      if (
+        fieldName.toLowerCase() ===
+        gsi.partitionKey.replace(/_/g, '').toLowerCase()
+      ) {
+        try {
+          parsedPk = (fieldSchema as z.ZodTypeAny).parse(pkData);
+        } catch {
+          parsedPk = pkData;
+        }
+        break;
+      }
+    }
+    return new QueryKeyBuilder(this.table, this.schema, parsedPk, gsi);
   }
 }

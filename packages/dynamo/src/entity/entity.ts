@@ -45,7 +45,7 @@ export class Entity<
    *     name: 'John Doe',
    *     email: 'john@example.com'
    *   })
-   *   .execute();
+   *   .exec();
    * ```
    */
   create() {
@@ -61,7 +61,7 @@ export class Entity<
    * ```typescript
    * const user = await UserEntity.get()
    *   .key({ userId: 'user-123' })
-   *   .execute();
+   *   .exec();
    * ```
    */
   get() {
@@ -79,7 +79,7 @@ export class Entity<
    *   .pk({ organizationId: 'org-123' })
    *   .filter('isActive', '=', true)
    *   .limit(10)
-   *   .execute();
+   *   .exec();
    * ```
    */
   query() {
@@ -96,7 +96,7 @@ export class Entity<
    * const updated = await UserEntity.update()
    *   .key({ userId: 'user-123' })
    *   .set({ name: 'Jane Doe', updatedAt: new Date() })
-   *   .execute();
+   *   .exec();
    * ```
    */
   update() {
@@ -113,7 +113,7 @@ export class Entity<
    * await UserEntity.delete()
    *   .key({ userId: 'user-123' })
    *   .condition('attribute_exists(email)')
-   *   .execute();
+   *   .exec();
    * ```
    */
   delete() {
@@ -133,7 +133,7 @@ export class Entity<
    *     { userId: 'user-456' },
    *     { userId: 'user-789' }
    *   ])
-   *   .execute();
+   *   .exec();
    * ```
    */
   batchGet() {
@@ -155,7 +155,7 @@ export class Entity<
    *   })
    *   .update({ userId: 'user-123' }, { lastSeen: new Date() })
    *   .delete({ userId: 'user-old' })
-   *   .execute();
+   *   .exec();
    * ```
    */
   transaction() {

@@ -35,16 +35,14 @@ export interface TableConfig {
 export interface GSIDefinition {
   /** Unique alias for referencing this GSI in queries */
   alias: string;
-
+  /** Real DynamoDB IndexName (if different from alias) */
+  indexName?: string;
   /** Partition key attribute name for the GSI */
   partitionKey: string;
-
   /** Sort key attribute name for the GSI (optional) */
   sortKey?: string;
-
   /** Type of attribute projection for the GSI */
   projectionType?: 'ALL' | 'KEYS_ONLY' | 'INCLUDE';
-
   /** Specific attributes to include when projectionType is 'INCLUDE' */
   projectedAttributes?: string[];
 }
@@ -54,13 +52,16 @@ export interface GSIDefinition {
  *
  * Defines the required structure for entity schemas with mandatory
  * partition key and optional sort key, plus additional attributes.
+ *
+ * In Zod v4, the internal class ZodEffects is no longer exported as a public member.
+ * We accept any schema whose OUTPUT type resolves to string (e.g. string(), transforms, pipelines).
+ * Using ZodType<string, any, any> covers plain strings, coerced strings, and transformed schemas
+ * that ultimately output a string.
  */
+export type StringOutputSchema = z.ZodType<string>;
 export type EntitySchemaDefinition = {
-  /** Partition key schema with template-based transformation */
-  pk: z.ZodEffects<any, string, any>;
-
-  /** Optional sort key schema with template-based transformation */
-  sk?: z.ZodEffects<any, string, any>;
+  pk: StringOutputSchema;
+  sk?: StringOutputSchema;
 } & Record<string, z.ZodTypeAny>;
 
 /**
@@ -120,8 +121,11 @@ export interface TransactionResult {
  *
  * @template T - CompleteEntity type to extract from
  */
-export type EntityType<T extends Entity<any, any>> =
-  T extends Entity<any, infer TSchema> ? z.infer<TSchema> : never;
+export type EntityType<
+  T extends Entity<string, z.ZodObject<EntitySchemaDefinition>>,
+> = T['schema'] extends z.ZodObject<EntitySchemaDefinition>
+  ? z.infer<T['schema']>
+  : never;
 
 /**
  * Utility type to extract the key structure from a CompleteEntity
@@ -131,15 +135,14 @@ export type EntityType<T extends Entity<any, any>> =
  *
  * @template T - CompleteEntity type to extract from
  */
-export type EntityKey<T extends Entity<any, any>> =
-  T extends Entity<any, infer TSchema>
-    ? TSchema extends z.ZodObject<infer TShape>
-      ? TShape extends EntitySchemaDefinition
-        ? {
-            pk: z.input<TShape['pk']>;
-          } & (TShape['sk'] extends z.ZodTypeAny
-            ? { sk: z.input<TShape['sk']> }
-            : Record<string, never>)
-        : never
-      : never
-    : never;
+export type EntityKey<
+  T extends Entity<string, z.ZodObject<EntitySchemaDefinition>>,
+> = T['schema'] extends z.ZodObject<infer TShape>
+  ? TShape extends EntitySchemaDefinition
+    ? {
+        pk: z.input<TShape['pk']>;
+      } & (TShape['sk'] extends z.ZodTypeAny
+        ? { sk: z.input<TShape['sk']> }
+        : Record<string, never>)
+    : never
+  : never;

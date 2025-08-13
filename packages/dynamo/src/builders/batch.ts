@@ -2,10 +2,11 @@ import {
   BatchGetCommand,
   type BatchGetCommandOutput,
 } from '@aws-sdk/lib-dynamodb';
-import type { z } from 'zod';
+import { z } from 'zod';
 import { DynamoOperationError, EntityValidationError } from '../errors.js';
 import type { ConnectedTable } from '../table/connection.js';
 import type { BatchResult, EntitySchemaDefinition } from '../types.js';
+import { deserialize } from '../utils/transformer.js';
 import { BaseBuilder, type DynamoResult } from './base-builder.js';
 
 export class EntityBatchGetBuilder<
@@ -42,7 +43,7 @@ export class EntityBatchGetBuilder<
     return this;
   }
 
-  async execute(): Promise<DynamoResult<BatchResult<z.infer<TSchema>>>> {
+  async exec(): Promise<DynamoResult<BatchResult<z.infer<TSchema>>>> {
     if (!this._keys.length) {
       return [null, new DynamoOperationError('No keys provided')];
     }
@@ -59,7 +60,10 @@ export class EntityBatchGetBuilder<
     if (opErr) return [null, opErr];
     try {
       const items = (output?.Responses?.[this.table.tableName] ?? []).map(
-        (item: Record<string, unknown>) => this.schema.parse(item)
+        (item: Record<string, unknown>) => {
+          const deserialized = deserialize(item, this.schema);
+          return this.schema.parse(deserialized);
+        }
       );
       const unprocessed =
         output?.UnprocessedKeys?.[this.table.tableName]?.Keys ?? [];
@@ -75,7 +79,7 @@ export class EntityBatchGetBuilder<
         null,
         new EntityValidationError(
           'Entity validation failed',
-          (err as any)?.issues
+          err instanceof z.ZodError ? err.issues : undefined
         ),
       ];
     }
