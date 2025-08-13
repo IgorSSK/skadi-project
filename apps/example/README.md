@@ -91,7 +91,7 @@ const UserEntity = Entity.define('User')
 // Usar a entidade
 const user = await UserEntity.create()
   .item({ userId: 'user-123', name: 'João Silva' })
-  .execute();
+  .exec();
 ```
 
 ## 📚 Recursos
@@ -195,7 +195,7 @@ const AccountEntity = Entity.define('Account')
 const account = await AccountEntity.create()
   .item({ /* full object */ })
   .ifNotExists()
-  .execute();
+  .exec();
 
 // Query with filters
 const accounts = await AccountEntity.query()
@@ -205,7 +205,7 @@ const accounts = await AccountEntity.query()
   .filter('balance', '>', 1000)
   .sortBy('DESC')
   .limit(10)
-  .execute();
+  .exec();
 
 // Complex updates
 const updated = await AccountEntity.update()
@@ -214,7 +214,7 @@ const updated = await AccountEntity.update()
   .add('balance', 500.0)
   .condition('attribute_exists(pk)')
   .returnValues('ALL_NEW')
-  .execute();
+  .exec();
 ```
 
 ### 4. Advanced Features

@@ -1,19 +1,21 @@
-import { Entity, Table, zdynamo } from '@skadi/dynamo';
+import {
+  Entity,
+  EntityValidationError,
+  SkadiDynamoError,
+  Table,
+  zdynamo,
+} from '@skadi/dynamo';
 import { z } from 'zod';
 
 async function main() {
-  const SingleTable = Table.connect('dynamo_std_demo')
-    .clientConfig({ region: 'us-east-1' })
+  const SingleTable = Table.connect('dynamo_std_demo', 'us-east-1')
+    .options({ caseStyle: 'snakeCase' })
     .gsis([
       {
         alias: 'byType',
-        partitionKey: 'gsi1_pk',
-        sortKey: 'gsi1_sk',
-      },
-      {
-        alias: 'byStatus',
-        partitionKey: 'gsi2_pk',
-        sortKey: 'gsi2_sk',
+        indexName: 'gsi_1_demo',
+        partitionKey: 'gsi_1_pk',
+        sortKey: 'gsi_1_sk',
       },
     ])
     .build();
@@ -45,30 +47,23 @@ async function main() {
       balance: zdynamo.positiveNumber().default(0),
       currency: zdynamo.currency(),
       status: z.enum(['ACTIVE', 'INACTIVE', 'FROZEN']).default('ACTIVE'),
+      gsi1Pk: zdynamo.gsiPartitionKey('TYPE#{type}', {
+        type: z.enum(['CHECKING', 'SAVINGS', 'CREDIT']),
+      }),
+      gsi1Sk: zdynamo.gsiSortKey('{createdAt}', { createdAt: z.date() }),
+      gsi2Pk: zdynamo.gsiPartitionKey('STATUS#{status}', {
+        status: z.enum(['ACTIVE', 'INACTIVE', 'FROZEN']),
+      }),
+      gsi2Sk: zdynamo.gsiSortKey('{createdAt}', { createdAt: z.date() }),
       createdAt: zdynamo.timestamp(),
       updatedAt: zdynamo.timestamp(),
     });
 
-  const TransactionEntity = Entity.define('Transaction')
-    .table(SingleTable)
-    .schema({
-      pk: zdynamo.partitionKey('ACCOUNT#{accountId}', {
-        accountId: z.string(),
-      }),
-      sk: zdynamo.sortKey('TXN#{transactionId}', { transactionId: z.string() }),
-      accountId: z.string(),
-      transactionId: z.string(),
-      amount: z.number(),
-      type: z.enum(['DEBIT', 'CREDIT']),
-      description: zdynamo.nonEmptyString(),
-      status: z.enum(['PENDING', 'COMPLETED', 'FAILED']).default('PENDING'),
-      reference: z.string().optional(),
-      createdAt: zdynamo.timestamp(),
-      processedAt: z.date().optional(),
-    });
+  console.log('--- Iniciando demonstração do Skadi Dynamo ODM ---');
 
   // 1. Criar usuário
-  const user = await UserEntity.create()
+  console.log('\n1. Criando usuário...');
+  const [user, createUserError] = await UserEntity.create()
     .item({
       pk: { userId: 'user-123' },
       sk: {},
@@ -78,21 +73,37 @@ async function main() {
       status: 'ACTIVE',
       organizationId: 'org-456',
       role: 'USER',
-      createdAt: new Date(),
-      updatedAt: new Date(),
     })
-    .execute();
+    .exec();
 
+  if (createUserError) {
+    console.error('Erro ao criar usuário:', createUserError);
+    if (createUserError instanceof EntityValidationError) {
+      console.error('Detalhes da validação:', createUserError);
+    }
+    return;
+  }
+  if (!user) {
+    console.error('Usuário não foi criado, mas não houve erro.');
+    return;
+  }
   console.log('Usuário criado:', user.userId, user.name);
 
   // 2. Buscar usuário
-  const foundUser = await UserEntity.get()
+  console.log('\n2. Buscando usuário...');
+  const [foundUser, getUserError] = await UserEntity.get()
     .key({ userId: 'user-123' })
-    .execute();
+    .exec();
+
+  if (getUserError) {
+    console.error('Erro ao buscar usuário:', getUserError);
+    return;
+  }
   console.log('Usuário encontrado:', foundUser?.userId, foundUser?.name);
 
   // 3. Criar conta
-  const account = await AccountEntity.create()
+  console.log('\n3. Criando conta...');
+  const [account, createAccountError] = await AccountEntity.create()
     .item({
       pk: { userId: 'user-123' },
       sk: { accountId: 'acc-789' },
@@ -103,10 +114,21 @@ async function main() {
       balance: 1500.5,
       currency: 'BRL',
       status: 'ACTIVE',
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      gsi1Pk: { type: 'CHECKING' },
+      gsi1Sk: { createdAt: new Date() },
+      gsi2Pk: { status: 'ACTIVE' },
+      gsi2Sk: { createdAt: new Date() },
     })
-    .execute();
+    .exec();
+
+  if (createAccountError) {
+    console.error('Erro ao criar conta:', createAccountError);
+    return;
+  }
+  if (!account) {
+    console.error('Conta não foi criada, mas não houve erro.');
+    return;
+  }
   console.log(
     'Conta criada:',
     account.accountId,
@@ -115,84 +137,103 @@ async function main() {
   );
 
   // 4. Atualizar conta
-  const updatedAccount = await AccountEntity.update()
+  console.log('\n4. Atualizando conta...');
+  const [updatedAccount, updateAccountError] = await AccountEntity.update()
     .key({ userId: 'user-123', accountId: 'acc-789' })
-    .set({ balance: 2000, updatedAt: new Date() })
-    .execute();
+    .set({ balance: 2000, status: 'ACTIVE' })
+    .exec();
+
+  if (updateAccountError) {
+    console.error(
+      'Erro ao atualizar conta:',
+      JSON.stringify(updateAccountError)
+    );
+    return;
+  }
   console.log(
     'Conta atualizada:',
     updatedAccount?.accountId,
     updatedAccount?.balance
   );
 
-  // 5. Query contas do usuário
-  const contas = await AccountEntity.query()
+  // 5. Query de contas do usuário (sem GSI)
+  console.log('\n5. Consultando contas do usuário (Query sem GSI)...');
+  const [contas, queryError] = await AccountEntity.query()
     .pk({ userId: 'user-123' })
     .sk('begins_with', 'ACCOUNT#')
-    .execute();
-  if (Array.isArray(contas.items) && contas.items.length > 0) {
+    .exec();
+
+  if (queryError) {
+    console.error('Erro ao consultar contas:', queryError);
+    return;
+  }
+
+  if (contas && contas.items.length > 0) {
     console.log(
       'Contas do usuário:',
-      contas.items.map((c: any) => ({ id: c.accountId, saldo: c.balance }))
+      contas.items.map(c => ({ id: c.accountId, saldo: c.balance }))
     );
   } else {
     console.log('Contas do usuário: Nenhuma encontrada');
   }
 
-  // 6. Criar transação
-  const txn = await TransactionEntity.create()
-    .item({
-      pk: { accountId: 'acc-789' },
-      sk: { transactionId: 'txn-001' },
-      accountId: 'acc-789',
-      transactionId: 'txn-001',
-      amount: -50.0,
-      type: 'DEBIT',
-      description: 'Compra no supermercado',
-      status: 'COMPLETED',
-      createdAt: new Date(),
-    })
-    .execute();
-  console.log(
-    'Transação criada:',
-    txn.transactionId,
-    txn.amount,
-    txn.description
-  );
+  // 6. Query por índice (contas ativas via GSI)
+  console.log('\n6. Consultando contas ativas (Query com GSI)...');
+  const [contasAtivas, gsiQueryError] = await AccountEntity.query()
+    .index('byType')
+    .pk({ type: 'CHECKING' })
+    .exec();
 
-  // 7. Query transações da conta
-  const txns = await TransactionEntity.query()
-    .pk({ accountId: 'acc-789' })
-    .sk('begins_with', 'TXN#')
-    .execute();
-  if (Array.isArray(txns.items) && txns.items.length > 0) {
-    console.log(
-      'Transações da conta:',
-      txns.items.map((t: any) => ({ id: t.transactionId, valor: t.amount }))
-    );
-  } else {
-    console.log('Transações da conta: Nenhuma encontrada');
+  if (gsiQueryError) {
+    console.error('Erro ao consultar contas ativas via GSI:', gsiQueryError);
+    return;
   }
 
-  // 8. Query por índice (contas ativas via GSI)
-  const contasAtivas = await AccountEntity.query()
-    .index('byStatus')
-    .pk({ status: 'ACTIVE' })
-    .execute();
-  if (Array.isArray(contasAtivas.items) && contasAtivas.items.length > 0) {
+  if (contasAtivas && contasAtivas.items.length > 0) {
     console.log(
       'Contas ativas via GSI:',
-      contasAtivas.items.map((c: any) => c.accountId)
+      contasAtivas.items.map(c => c.accountId)
     );
   } else {
     console.log('Contas ativas via GSI: Nenhuma encontrada');
   }
 
-  // 9. Deletar conta
-  await AccountEntity.delete()
+  // 7. Deletar conta
+  console.log('\n7. Deletando conta...');
+  const [, deleteError] = await AccountEntity.delete()
     .key({ userId: 'user-123', accountId: 'acc-789' })
-    .execute();
-  console.log('Conta deletada: acc-789');
+    .exec();
+
+  if (deleteError) {
+    console.error('Erro ao deletar conta:', deleteError);
+    return;
+  }
+  console.log('Conta deletada com sucesso: acc-789');
+
+  // 8. Verificar se a conta foi deletada
+  console.log('\n8. Verificando se a conta foi deletada...');
+  const [deletedAccount, getDeletedError] = await AccountEntity.get()
+    .key({ userId: 'user-123', accountId: 'acc-789' })
+    .exec();
+
+  if (getDeletedError) {
+    console.error('Erro ao verificar conta deletada:', getDeletedError);
+    return;
+  }
+
+  if (deletedAccount === null) {
+    console.log('Verificação bem-sucedida: a conta não foi encontrada.');
+  } else {
+    console.error('Falha na verificação: a conta ainda existe.');
+  }
+
+  console.log('\n--- Demonstração concluída ---');
 }
 
-main().catch(console.error);
+main().catch(error => {
+  if (error instanceof SkadiDynamoError) {
+    console.error(`Erro de Skadi Dynamo [${error.code}]:`, error.message);
+  } else {
+    console.error('Ocorreu um erro inesperado:', error);
+  }
+});

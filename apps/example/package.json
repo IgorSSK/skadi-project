@@ -17,14 +17,12 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.848.0",
-    "@aws-sdk/lib-dynamodb": "^3.848.0",
     "@skadi/dynamo": "workspace:*",
     "@skadi/utils": "workspace:*",
-    "zod": "^3.25.76"
+    "zod": "^4.0.17"
   },
   "devDependencies": {
-    "@types/node": "^20.11.16",
+    "@types/node": "^24.2.1",
     "tsup": "^8.0.2",
     "tsx": "^4.7.1",
     "typescript": "^5.3.3"
