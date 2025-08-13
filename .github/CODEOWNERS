@@ -1,0 +1,11 @@
+# Global code owners
+* @IgorSSK
+
+# Package dependencies require review
+package.json @IgorSSK
+**/package.json @IgorSSK
+pnpm-lock.yaml @IgorSSK
+
+# Configuration files
+renovate.json @IgorSSK
+.github/ @IgorSSK
