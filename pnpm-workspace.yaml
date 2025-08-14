@@ -4,7 +4,7 @@ packages:
 
 catalogs:
   default:
-    '@biomejs/biome': ^1.8.3
+    '@biomejs/biome': ^2.2.0
     '@types/node': ^20.11.16
     tsup: ^8.0.2
     typescript: ^5.3.3
