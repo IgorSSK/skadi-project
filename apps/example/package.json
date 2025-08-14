@@ -1,32 +1,32 @@
 {
-  "name": "@skadi/example",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "description": "Example application using Skadi packages",
-  "engines": {
-    "node": ">=22.17.1"
-  },
-  "scripts": {
-    "dev": "tsx src/dynamo-demo.ts",
-    "demo:dynamo": "tsx src/dynamo-demo.ts",
-    "build": "tsup",
-    "start": "node dist/dynamo-demo.js",
-    "type-check": "tsc --noEmit",
-    "lint": "biome lint .",
-    "format": "biome format --write .",
-    "format:check": "biome format .",
-    "clean": "rm -rf dist"
-  },
-  "dependencies": {
-    "@skadi/dynamo": "workspace:*",
-    "@skadi/utils": "workspace:*",
-    "zod": "^4.0.17"
-  },
-  "devDependencies": {
-    "@types/node": "^24.2.1",
-    "tsup": "^8.0.2",
-    "tsx": "^4.7.1",
-    "typescript": "^5.3.3"
-  }
+	"name": "@skadi/example",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"description": "Example application using Skadi packages",
+	"engines": {
+		"node": ">=22.17.1"
+	},
+	"scripts": {
+		"dev": "tsx src/dynamo-demo.ts",
+		"demo:dynamo": "tsx src/dynamo-demo.ts",
+		"build": "tsup",
+		"start": "node dist/dynamo-demo.js",
+		"type-check": "tsc --noEmit",
+		"lint": "biome lint .",
+		"format": "biome format --write .",
+		"format:check": "biome format .",
+		"clean": "rm -rf dist"
+	},
+	"dependencies": {
+		"@skadi/dynamo": "workspace:*",
+		"@skadi/utils": "workspace:*",
+		"zod": "^4.0.17"
+	},
+	"devDependencies": {
+		"@types/node": "^24.2.1",
+		"tsup": "^8.0.2",
+		"tsx": "^4.7.1",
+		"typescript": "^5.3.3"
+	}
 }
