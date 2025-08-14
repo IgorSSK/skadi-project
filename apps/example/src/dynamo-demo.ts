@@ -85,6 +85,7 @@ async function main() {
 
 	// 2. Buscar usuário
 	console.log("\n2. Buscando usuário...");
+	// @ts-expect-error - Type intersection issue with entities that have both pk and sk
 	const [foundUser, getUserError] = await UserEntity.get().key({ userId: "user-123" }).exec();
 
 	if (getUserError) {
