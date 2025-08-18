@@ -10,7 +10,6 @@ on:
 env:
   NODE_VERSION: 22
   PNPM_VERSION: 10
-  MIN_COVERAGE: 80
 
 jobs:
   test:
@@ -43,88 +42,15 @@ jobs:
         run: pnpm test -- --coverage
       - name: Build packages
         run: pnpm build
-      - name: Upload dist artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-packages
-          path: |
-            packages/**/dist
-          if-no-files-found: error
-          overwrite: true
 
   changeset-version:
-    name: Apply Changesets Versioning
+    name: Version & Publish (GitHub Packages)
     needs: test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Create Release Pull Request or Publish (dry)
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          version: pnpm version-packages
-          commit: "chore: version packages"
-          title: "chore: version packages"
-          publish: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  release-npm:
-    name: Publish to npmjs
-    needs: [test, changeset-version]
-    if: github.ref == 'refs/heads/main' && needs.changeset-version.result == 'success'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: ${{ env.PNPM_VERSION }}
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
-          registry-url: "https://registry.npmjs.org"
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Build packages
-        run: pnpm build
-      - name: Publish to npm (Changesets)
-        run: pnpm release:npm
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  release-github-packages:
-    name: Publish to GitHub Packages
-    needs: [release-npm]
-    if: github.ref == 'refs/heads/main' && needs.release-npm.result == 'success'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
       packages: write
     steps:
       - uses: actions/checkout@v4
@@ -140,16 +66,16 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
           registry-url: "https://npm.pkg.github.com"
-          scope: "@skadi"
-      - name: Configure .npmrc for GitHub Packages
-        run: |
-          echo "@skadi:registry=https://npm.pkg.github.com" > .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}" >> .npmrc
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Build packages
-        run: pnpm build
-      - name: Publish packages to GitHub Packages
-        run: pnpm release:github
+      - name: Version & Publish
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: pnpm version-packages
+          commit: "chore: version packages"
+          title: "chore: version packages"
+          publish: pnpm release:github
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
