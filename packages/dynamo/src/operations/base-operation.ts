@@ -16,8 +16,9 @@ export type DynamoDBBuilderCommand =
 	| BatchGetCommand
 	| TransactWriteCommand
 	| QueryCommand;
-import { DynamoOperationError } from "../errors.js";
-import type { ConnectedTable } from "../table/connection.js";
+
+import type { ConnectedTable } from "../client/table.js";
+import { DynamoOperationError } from "../common/errors.js";
 
 export type DynamoResult<T> = [T | null, DynamoOperationError | null];
 

@@ -1,8 +1,8 @@
 import { QueryCommand, type QueryCommandInput, type QueryCommandOutput } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
-import type { ConnectedTable } from "../table/connection.js";
-import type { EntitySchemaDefinition, QueryResult } from "../types.js";
-import { deserialize } from "../utils/transformer.js";
+import type { ConnectedTable } from "../client/table.js";
+import { deserialize } from "../common/transformer.js";
+import type { EntitySchemaDefinition, QueryResult } from "../common/types.js";
 
 /**
  * Builder for querying DynamoDB items
@@ -70,7 +70,7 @@ export class EntityQueryBuilder<TSchema extends z.ZodObject<EntitySchemaDefiniti
  *
  * @template TSchema - The Zod schema type for the entity
  */
-import { BaseBuilder, type DynamoResult } from "./base-builder.js";
+import { BaseBuilder, type DynamoResult } from "./base-operation.js";
 
 class QueryKeyBuilder<TSchema extends z.ZodObject<EntitySchemaDefinition>> extends BaseBuilder<
 	QueryResult<z.infer<TSchema>>
@@ -329,7 +329,7 @@ class QueryKeyBuilder<TSchema extends z.ZodObject<EntitySchemaDefinition>> exten
 				null,
 			];
 		} catch (err) {
-			const { EntityValidationError } = require("../errors.js");
+			const { EntityValidationError } = require("../common/errors.js");
 			return [
 				null,
 				new EntityValidationError("Entity validation failed", err instanceof z.ZodError ? err.issues : undefined),

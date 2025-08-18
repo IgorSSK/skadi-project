@@ -1,7 +1,7 @@
 import { DynamoDBClient, type DynamoDBClientConfig } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import type { GSIDefinition } from "../types.js";
-import type { CaseTransformer } from "../utils/transformer.js";
+import type { CaseTransformer } from "../common/transformer.js";
+import type { GSIDefinition } from "../common/types.js";
 
 export interface TableOptions {
 	caseStyle?: CaseTransformer;

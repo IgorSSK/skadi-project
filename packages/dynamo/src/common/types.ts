@@ -1,7 +1,7 @@
 import type { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import type { z } from "zod";
-import type { Entity } from "./entity/entity.js";
+import type { Entity } from "../entity/entity.js";
 
 /**
  * Configuration options for DynamoDB table connections

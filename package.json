@@ -34,7 +34,6 @@
     "vitest": "catalog:"
   },
   "workspaces": [
-    "apps/*",
     "packages/*"
   ]
 }

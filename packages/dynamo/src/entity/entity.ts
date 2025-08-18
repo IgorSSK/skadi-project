@@ -1,4 +1,6 @@
 import type { z } from "zod";
+import type { ConnectedTable } from "../client/table.js";
+import type { EntitySchemaDefinition } from "../common/types.js";
 import {
 	EntityBatchGetBuilder,
 	EntityCreateBuilder,
@@ -7,9 +9,7 @@ import {
 	EntityQueryBuilder,
 	EntityTransactionBuilder,
 	EntityUpdateBuilder,
-} from "../builders/index.js";
-import type { ConnectedTable } from "../table/connection.js";
-import type { EntitySchemaDefinition } from "../types.js";
+} from "../operations/index.js";
 
 /**
  * Represents a fully configured DynamoDB entity that provides access

@@ -1,10 +1,10 @@
 import { BatchGetCommand, type BatchGetCommandOutput } from "@aws-sdk/lib-dynamodb";
 import { z } from "zod";
-import { DynamoOperationError, EntityValidationError } from "../errors.js";
-import type { ConnectedTable } from "../table/connection.js";
-import type { BatchResult, EntitySchemaDefinition } from "../types.js";
-import { deserialize } from "../utils/transformer.js";
-import { BaseBuilder, type DynamoResult } from "./base-builder.js";
+import type { ConnectedTable } from "../client/table.js";
+import { DynamoOperationError, EntityValidationError } from "../common/errors.js";
+import { deserialize } from "../common/transformer.js";
+import type { BatchResult, EntitySchemaDefinition } from "../common/types.js";
+import { BaseBuilder, type DynamoResult } from "./base-operation.js";
 
 export class EntityBatchGetBuilder<TSchema extends z.ZodObject<EntitySchemaDefinition>> extends BaseBuilder<
 	BatchResult<z.infer<TSchema>>

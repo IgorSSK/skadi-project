@@ -1,10 +1,10 @@
 import { GetCommand, type GetCommandInput, type GetCommandOutput } from "@aws-sdk/lib-dynamodb";
 import { ZodError, type z } from "zod";
-import { type DynamoOperationError, EntityValidationError, MissingKeyError } from "../errors.js";
-import type { ConnectedTable } from "../table/connection.js";
-import type { EntitySchemaDefinition } from "../types.js";
-import { deserialize } from "../utils/transformer.js";
-import { BaseBuilder } from "./base-builder.js";
+import type { ConnectedTable } from "../client/table.js";
+import { type DynamoOperationError, EntityValidationError, MissingKeyError } from "../common/errors.js";
+import { deserialize } from "../common/transformer.js";
+import type { EntitySchemaDefinition } from "../common/types.js";
+import { BaseBuilder } from "./base-operation.js";
 
 export class EntityGetBuilder<
 	TSchema extends z.ZodObject<EntitySchemaDefinition>,

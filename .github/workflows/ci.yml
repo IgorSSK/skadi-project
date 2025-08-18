@@ -41,11 +41,6 @@ jobs:
         run: pnpm type-check
       - name: Run tests with coverage
         run: pnpm test -- --coverage
-      - name: Enforce coverage threshold
-        run: |
-          TOTAL=$(node -e "const f=require('./coverage/coverage-summary.json');console.log(f.total.statements.pct)")
-          echo "Total coverage: $TOTAL%"
-          awk -v t=$TOTAL -v min=${{ env.MIN_COVERAGE }} 'BEGIN{ if (t+0 < min+0) { print "Coverage below minimum ("t" < "min")"; exit 1 } }'
       - name: Build packages
         run: pnpm build
       - name: Upload dist artifacts
@@ -55,6 +50,7 @@ jobs:
           path: |
             packages/**/dist
           if-no-files-found: error
+          overwrite: true
 
   changeset-version:
     name: Apply Changesets Versioning

@@ -1,10 +1,10 @@
 import { DeleteCommand, type DeleteCommandInput, type DeleteCommandOutput } from "@aws-sdk/lib-dynamodb";
 import type { z } from "zod";
-import { MissingKeyError } from "../errors.js";
-import type { ConnectedTable } from "../table/connection.js";
-import type { EntitySchemaDefinition } from "../types.js";
-import { deserialize } from "../utils/transformer.js";
-import { BaseBuilder, type DynamoResult } from "./base-builder.js";
+import type { ConnectedTable } from "../client/table.js";
+import { MissingKeyError } from "../common/errors.js";
+import { deserialize } from "../common/transformer.js";
+import type { EntitySchemaDefinition } from "../common/types.js";
+import { BaseBuilder, type DynamoResult } from "./base-operation.js";
 
 export class EntityDeleteBuilder<TSchema extends z.ZodObject<EntitySchemaDefinition>> extends BaseBuilder<Record<
 	string,

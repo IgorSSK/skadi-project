@@ -1,11 +1,11 @@
 import { TransactWriteCommand, type TransactWriteCommandOutput } from "@aws-sdk/lib-dynamodb";
 import type { z } from "zod";
-import type { ConnectedTable } from "../table/connection.js";
+import type { ConnectedTable } from "../client/table.js";
 
-import { DynamoOperationError } from "../errors.js";
-import type { EntitySchemaDefinition, TransactionResult } from "../types.js";
-import { serialize } from "../utils/transformer.js";
-import { BaseBuilder, type DynamoResult } from "./base-builder.js";
+import { DynamoOperationError } from "../common/errors.js";
+import { serialize } from "../common/transformer.js";
+import type { EntitySchemaDefinition, TransactionResult } from "../common/types.js";
+import { BaseBuilder, type DynamoResult } from "./base-operation.js";
 
 export class EntityTransactionBuilder<
 	TSchema extends z.ZodObject<EntitySchemaDefinition>,

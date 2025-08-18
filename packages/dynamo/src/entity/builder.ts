@@ -1,6 +1,6 @@
 import { z } from "zod";
-import type { ConnectedTable } from "../table/connection.js";
-import type { EntitySchemaDefinition } from "../types.js";
+import type { ConnectedTable } from "../client/table.js";
+import type { EntitySchemaDefinition } from "../common/types.js";
 import { Entity as SkadiEntity } from "./entity.js";
 
 /**

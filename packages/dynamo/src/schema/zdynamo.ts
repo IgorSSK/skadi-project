@@ -63,20 +63,6 @@ export const zdynamo = {
 	},
 
 	/**
-	 * Creates a sort key value schema without template transformation
-	 *
-	 * @template T - The Zod type for the sort key value
-	 * @param schema - Zod schema for the sort key value
-	 * @returns The original schema unchanged
-	 *
-	 * @example
-	 * ```typescript
-	 * const skValue = zdynamo.sortKeyValue(z.string());
-	 * ```
-	 */
-	sortKeyValue: <T extends z.ZodTypeAny>(schema: T) => schema,
-
-	/**
 	 * Creates a GSI partition key schema (alias for partitionKey)
 	 *
 	 * @template T - Record type defining the template parameters
@@ -112,20 +98,6 @@ export const zdynamo = {
 	timestamp: () => z.date().default(() => new Date()),
 
 	/**
-	 * Creates an entity type schema with a literal value
-	 *
-	 * @param type - The literal entity type value
-	 * @returns Zod literal schema with the type as default
-	 *
-	 * @example
-	 * ```typescript
-	 * const entityType = zdynamo.entityType('User');
-	 * // Always validates to and defaults to 'User'
-	 * ```
-	 */
-	entityType: (type: string) => z.literal(type).default(type),
-
-	/**
 	 * Creates a currency code schema (3-character string)
 	 *
 	 * @returns Zod string schema that validates 3-character currency codes
@@ -137,19 +109,6 @@ export const zdynamo = {
 	 * ```
 	 */
 	currency: () => z.string().length(3).default("USD"),
-
-	/**
-	 * Creates a UUID schema
-	 *
-	 * @returns Zod string schema that validates UUID format
-	 *
-	 * @example
-	 * ```typescript
-	 * const id = zdynamo.uuid();
-	 * // Validates UUID format like '550e8400-e29b-41d4-a716-446655440000'
-	 * ```
-	 */
-	uuid: () => z.string().uuid(),
 
 	/**
 	 * Creates a non-empty string schema
