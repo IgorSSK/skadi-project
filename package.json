@@ -20,17 +20,20 @@
     "clean": "turbo run clean && rm -rf node_modules",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "pnpm build && changeset publish"
+    "release:npm": "pnpm build && changeset publish",
+    "release:github": "pnpm build && pnpm -r --filter ./packages/* exec npm publish --access public --registry=https://npm.pkg.github.com",
+    "release:all": "pnpm release:npm && pnpm release:github",
+    "release": "pnpm release:all"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.8.3",
-    "@changesets/changelog-github": "^0.5.0",
-    "@changesets/cli": "^2.27.1",
+    "@biomejs/biome": "^2.2.0",
+    "@changesets/changelog-github": "^0.5.1",
+    "@changesets/cli": "^2.29.5",
     "turbo": "^2.5.5",
-    "typescript": "^5.3.3"
+    "typescript": "^5.9.2",
+    "vitest": "catalog:"
   },
   "workspaces": [
-    "apps/*",
     "packages/*"
   ]
 }

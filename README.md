@@ -1,5 +1,17 @@
 # Skadi Monorepo
 
+<p align="center">
+  <a href="https://github.com/IgorSSK/skadi-project/actions/workflows/ci.yml"><img src="https://github.com/IgorSSK/skadi-project/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+   <a href="https://github.com/IgorSSK/skadi-project/pkgs/npm/skadi%2Fdynamo"><img src="https://img.shields.io/badge/pkg-%40skadi%2Fdynamo-blue" alt="package" /></a>
+  <a href="https://github.com/IgorSSK/skadi-project/blob/main/LICENSE"><img src="https://img.shields.io/github/license/IgorSSK/skadi-project" alt="license" /></a>
+  <a href="https://github.com/IgorSSK/skadi-project"><img src="https://img.shields.io/github/last-commit/IgorSSK/skadi-project" alt="last commit" /></a>
+  <a href="https://github.com/IgorSSK/skadi-project/pulls"><img src="https://img.shields.io/github/issues-pr/IgorSSK/skadi-project" alt="open PRs" /></a>
+  <a href="https://github.com/IgorSSK/skadi-project/issues"><img src="https://img.shields.io/github/issues/IgorSSK/skadi-project" alt="issues" /></a>
+  <a href="https://codecov.io/gh/IgorSSK/skadi-project"><img src="https://img.shields.io/codecov/c/gh/IgorSSK/skadi-project?token=" alt="coverage" /></a>
+   <a href="https://github.com/IgorSSK/skadi-project/pkgs/npm"><img src="https://img.shields.io/badge/published-github%20packages-blue" alt="registry" /></a>
+  <a href="https://github.com/changesets/changesets"><img src="https://img.shields.io/badge/managed%20by-changesets-4B32C3" alt="changesets" /></a>
+</p>
+
 A TypeScript monorepo for Node.js libraries and utilities.
 
 ## 📦 Packages
@@ -115,24 +127,37 @@ pnpm add -r lodash
 
 ## 🚀 Publishing
 
-This project uses [Changesets](https://github.com/changesets/changesets) for version management and publishing.
+Os pacotes são publicados exclusivamente no GitHub Packages (`npm.pkg.github.com`).
 
-### Creating a Changeset
+Automações:
+- Versionamento e changelog via Changesets
+- CI: lint, tipos, testes, build
+- Publicação automática na branch `main` quando há changesets pendentes
 
-```bash
-pnpm changeset
+### Autenticação Local
+
+Crie/edite um `~/.npmrc` com:
+```
+@skadi:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
 ```
 
-### Version Packages
+### Consumo do Pacote
 
+No seu projeto que usa npm/pnpm/yarn:
+```
+@skadi:registry=https://npm.pkg.github.com
+```
+Depois instale normalmente:
 ```bash
-pnpm version-packages
+pnpm add @skadi/dynamo
 ```
 
-### Publish
-
+### Passos Manuais (caso precise forçar)
 ```bash
-pnpm release
+pnpm changeset            # cria changeset
+pnpm version-packages     # aplica versões
+pnpm release:github       # publica no GitHub Packages
 ```
 
 ## 📋 Guidelines

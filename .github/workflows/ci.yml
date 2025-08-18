@@ -5,83 +5,77 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: 22
+  PNPM_VERSION: 10
 
 jobs:
   test:
-    name: Test & Build
+    name: Quality (Lint, Type Check, Test, Build)
     runs-on: ubuntu-latest
     strategy:
       matrix:
         node-version: [20, 22]
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 10
-
+          version: ${{ env.PNPM_VERSION }}
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-
+          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Run linting
+      - name: Run linting (Biome)
         run: pnpm lint
-
+      - name: Check formatting (Biome)
+        run: pnpm format:check || (echo 'Formatting issues found. Run pnpm format to fix.' && exit 1)
       - name: Run type checking
         run: pnpm type-check
-
-      - name: Run tests
-        run: pnpm test
-
+      - name: Run tests with coverage
+        run: pnpm test -- --coverage
       - name: Build packages
         run: pnpm build
 
-  release:
-    name: Release
+  changeset-version:
+    name: Version & Publish (GitHub Packages)
     needs: test
-    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      packages: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 10
-
+          version: ${{ env.PNPM_VERSION }}
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: 'pnpm'
-          registry-url: 'https://registry.npmjs.org'
-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+          registry-url: "https://npm.pkg.github.com"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Build packages
-        run: pnpm build
-
-      - name: Create Release Pull Request or Publish
+      - name: Version & Publish
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: pnpm release
-          title: 'chore: release packages'
-          commit: 'chore: release packages'
+          version: pnpm version-packages
+          commit: "chore: version packages"
+          title: "chore: version packages"
+          publish: pnpm release:github
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

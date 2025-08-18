@@ -1,0 +1,85 @@
+{
+  "name": "@skadi/dynamo",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Type-safe DynamoDB document mapper with schema-based operations",
+  "author": "Skadi Team",
+  "license": "MIT",
+  "homepage": "https://github.com/IgorSSK/skadi-project/tree/main/packages/dynamo",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/IgorSSK/skadi-project.git",
+    "directory": "packages/dynamo"
+  },
+  "bugs": {
+    "url": "https://github.com/IgorSSK/skadi-project/issues"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "pnpm clean && tsup && pnpm exec tsc --project tsconfig.dts.json --declaration --emitDeclarationOnly --outDir dist",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "type-check": "tsc --noEmit",
+    "lint": "biome lint src",
+    "lint:fix": "biome lint --apply src",
+    "format": "biome format --write src",
+    "format:check": "biome format src",
+    "clean": "rimraf dist",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": [
+    "dynamodb",
+    "aws",
+    "nosql",
+    "database",
+    "typescript",
+    "orm",
+    "odm",
+    "schema",
+    "type-safe"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.864.0",
+    "@aws-sdk/lib-dynamodb": "^3.864.0",
+    "date-fns": "^4.1.0",
+    "lodash-es": "^4.17.21",
+    "zod": "^4.0.17"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@types/lodash-es": "^4.17.12",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "^1.6.1",
+    "rimraf": "^6.0.1",
+    "tsup": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://npm.pkg.github.com"
+  }
+}
