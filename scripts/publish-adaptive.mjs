@@ -7,7 +7,7 @@
 // Build is executed once unless SKADI_SKIP_BUILD=1
 
 import { execSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, renameSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const root = resolve(process.cwd());
@@ -96,11 +96,35 @@ if (scopeOverrideWarn) {
 	);
 }
 
-for (const p of plan.npm) {
-	run("npm publish --access public --registry=https://registry.npmjs.org", {
-		cwd: p.dir,
-		env: { ...process.env, NODE_AUTH_TOKEN: npmToken },
-	});
+// Temporarily disable root .npmrc if it forces @skadi scope to GitHub and we have npm publishes
+let npmrcTemporarilyMoved = false;
+const npmrcBackupPath = npmrcPath + ".bak";
+if (scopeOverrideWarn && plan.npm.length && existsSync(npmrcPath)) {
+	try {
+		renameSync(npmrcPath, npmrcBackupPath);
+		npmrcTemporarilyMoved = true;
+		console.log("Temporarily moved .npmrc to avoid scope override for npm publishes.");
+	} catch (e) {
+		console.warn("Could not move .npmrc; publish may still target GitHub for scoped packages.", e);
+	}
+}
+
+try {
+	for (const p of plan.npm) {
+		run("npm publish --access public --registry=https://registry.npmjs.org", {
+			cwd: p.dir,
+			env: { ...process.env, NODE_AUTH_TOKEN: npmToken, NPM_CONFIG_REGISTRY: "https://registry.npmjs.org" },
+		});
+	}
+} finally {
+	if (npmrcTemporarilyMoved) {
+		try {
+			renameSync(npmrcBackupPath, npmrcPath);
+			console.log("Restored .npmrc after npm publishes.");
+		} catch (e) {
+			console.warn("Failed to restore original .npmrc", e);
+		}
+	}
 }
 for (const p of plan.github) {
 	run("npm publish --access public --registry=https://npm.pkg.github.com", {
