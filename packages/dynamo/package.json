@@ -1,5 +1,5 @@
 {
-  "name": "@IgorSSK/dynamo",
+  "name": "@skadi/dynamo",
   "version": "0.1.0",
   "type": "module",
   "description": "Type-safe DynamoDB document mapper with schema-based operations",
@@ -80,6 +80,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "registry": "https://npm.pkg.github.com"
-  }
+    "registry": "https://registry.npmjs.org"
+  },
+  "skadiRegistry": "npm"
 }
