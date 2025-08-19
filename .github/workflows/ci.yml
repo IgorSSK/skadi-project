@@ -44,7 +44,7 @@ jobs:
         run: pnpm build
 
   changeset-version:
-    name: Version & Publish (GitHub Packages)
+    name: Version & Publish (Adaptive)
     needs: test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -65,17 +65,17 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "pnpm"
-          registry-url: "https://npm.pkg.github.com"
+          registry-url: "https://registry.npmjs.org"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Version & Publish
+      - name: Version & Publish (changesets + adaptive script)
         id: changesets
         uses: changesets/action@v1
         with:
           version: pnpm version-packages
           commit: "chore: version packages"
           title: "chore: version packages"
-          publish: pnpm release:github
+          publish: pnpm release:adaptive
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
