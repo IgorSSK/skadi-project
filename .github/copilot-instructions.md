@@ -15,7 +15,7 @@ This is a TypeScript monorepo for Node.js libraries using:
 
 ## Package Guidelines
 
-- Use scoped packages with `@skadi/` prefix
+- Use scoped packages with `@skadhi/` prefix
 - Follow the established folder structure in `packages/`
 - Each package should have: `src/`, `tests/`, proper `package.json`, `tsconfig.json`, `tsup.config.ts`
 - Use `catalog:` for shared dependencies in `devDependencies`

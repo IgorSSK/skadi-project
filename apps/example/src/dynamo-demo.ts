@@ -1,4 +1,4 @@
-import { Entity, EntityValidationError, SkadiDynamoError, Table, zdynamo } from "@skadi/dynamo";
+import { Entity, EntityValidationError, SkadiDynamoError, Table, zdynamo } from "@skadhi/dynamo";
 import { z } from "zod";
 
 async function main() {

@@ -56,7 +56,7 @@ if (existsSync(npmrcPath)) {
 		npmrcContent = readFileSync(npmrcPath, "utf8");
 	} catch {}
 }
-if (npmrcContent.includes("@skadi:registry=") && plan.npm.some((p) => p.name.startsWith("@skadi/"))) {
+if (npmrcContent.includes("@skadhi:registry=") && plan.npm.some((p) => p.name.startsWith("@skadhi/"))) {
 	scopeOverrideWarn = true;
 }
 
@@ -92,11 +92,11 @@ if (plan.github.length && !ghToken) {
 
 if (scopeOverrideWarn) {
 	console.warn(
-		"Notice: .npmrc contains '@skadi:registry' pointing to GitHub; using explicit --registry for npm publishes to override.",
+		"Notice: .npmrc contains '@skadhi:registry' pointing to GitHub; using explicit --registry for npm publishes to override.",
 	);
 }
 
-// Temporarily disable root .npmrc if it forces @skadi scope to GitHub and we have npm publishes
+// Temporarily disable root .npmrc if it forces @skadhi scope to GitHub and we have npm publishes
 let npmrcTemporarilyMoved = false;
 const npmrcBackupPath = npmrcPath + ".bak";
 if (scopeOverrideWarn && plan.npm.length && existsSync(npmrcPath)) {

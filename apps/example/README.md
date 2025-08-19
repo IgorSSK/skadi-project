@@ -1,6 +1,6 @@
-# @skadi/dynamo - Demonstração Single Table Design
+# @skadhi/dynamo - Demonstração Single Table Design
 
-Demonstração completa do @skadi/dynamo ODM implementando o padrão **Single Table Design** para DynamoDB.
+Demonstração completa do @skadhi/dynamo ODM implementando o padrão **Single Table Design** para DynamoDB.
 
 ## 🏗️ Sobre a Demonstração
 
@@ -70,7 +70,7 @@ pnpm demo
 ## 🎯 Exemplo de Uso
 
 ```typescript
-import { Entity, Table, zdynamo } from '@skadi/dynamo';
+import { Entity, Table, zdynamo } from '@skadhi/dynamo';
 
 // Conectar à tabela
 const table = Table.connect('dynamo_std_demo')
@@ -103,7 +103,7 @@ const user = await UserEntity.create()
 
 ## 🎉 Resultado
 
-A demonstração executa sem erros e mostra todas as funcionalidades do @skadi/dynamo ODM em ação, servindo como base completa para implementações em produção.
+A demonstração executa sem erros e mostra todas as funcionalidades do @skadhi/dynamo ODM em ação, servindo como base completa para implementações em produção.
 
 ## 📁 Example File
 
@@ -244,7 +244,7 @@ This example serves as both a demonstration and documentation of the complete AP
 Once the package is published, you can use it like this:
 
 ```typescript
-import { Entity, Table, zdynamo } from '@skadi/dynamo';
+import { Entity, Table, zdynamo } from '@skadhi/dynamo';
 
 // Your implementation here...
 ```

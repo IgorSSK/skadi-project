@@ -1,5 +1,5 @@
 {
-  "name": "@skadi/dynamo",
+  "name": "@skadhi/dynamo",
   "version": "0.1.0",
   "type": "module",
   "description": "Type-safe DynamoDB document mapper with schema-based operations",
@@ -8,7 +8,7 @@
   "homepage": "https://github.com/IgorSSK/skadi-project/tree/main/packages/dynamo",
   "repository": {
     "type": "git",
-    "url": "https://github.com/IgorSSK/skadi-project.git",
+    "url": "git+https://github.com/IgorSSK/skadi-project.git",
     "directory": "packages/dynamo"
   },
   "bugs": {
@@ -82,5 +82,8 @@
     "access": "public",
     "registry": "https://registry.npmjs.org"
   },
-  "skadiRegistry": "npm"
+  "skadiRegistry": "npm",
+  "directories": {
+    "test": "tests"
+  }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "@skadi/root",
+  "name": "@skadhi/root",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -35,5 +35,11 @@
   },
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "main": "index.js",
+  "dependencies": {
+    "prettier": "^2.8.8"
+  },
+  "author": "",
+  "license": "ISC"
 }

@@ -13,6 +13,6 @@ export default defineConfig({
   outDir: 'dist',
   external: ['@aws-sdk/client-dynamodb', '@aws-sdk/lib-dynamodb'],
   banner: {
-    js: '/* @skadi/dynamo - Type-safe DynamoDB document mapper */',
+    js: '/* @skadhi/dynamo - Type-safe DynamoDB document mapper */',
   },
 });

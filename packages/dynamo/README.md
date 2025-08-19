@@ -1,11 +1,11 @@
-# @skadi/dynamo
+# @skadhi/dynamo
 
 <p align="center">
   <a href="https://github.com/IgorSSK/skadi-project/actions/workflows/ci.yml"><img src="https://github.com/IgorSSK/skadi-project/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
-  <a href="https://www.npmjs.com/package/@skadi/dynamo"><img src="https://img.shields.io/npm/v/@skadi/dynamo" alt="npm version" /></a>
-  <a href="https://www.npmjs.com/package/@skadi/dynamo"><img src="https://img.shields.io/npm/dm/@skadi/dynamo" alt="downloads" /></a>
+  <a href="https://www.npmjs.com/package/@skadhi/dynamo"><img src="https://img.shields.io/npm/v/@skadhi/dynamo" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/@skadhi/dynamo"><img src="https://img.shields.io/npm/dm/@skadhi/dynamo" alt="downloads" /></a>
   <a href="https://github.com/IgorSSK/skadi-project/blob/main/LICENSE"><img src="https://img.shields.io/github/license/IgorSSK/skadi-project" alt="license" /></a>
-  <a href="https://bundlephobia.com/package/@skadi/dynamo"><img src="https://img.shields.io/bundlephobia/minzip/@skadi/dynamo" alt="bundle size" /></a>
+  <a href="https://bundlephobia.com/package/@skadhi/dynamo"><img src="https://img.shields.io/bundlephobia/minzip/@skadhi/dynamo" alt="bundle size" /></a>
   <a href="https://github.com/changesets/changesets"><img src="https://img.shields.io/badge/managed%20by-changesets-4B32C3" alt="changesets" /></a>
 </p>
 
@@ -27,7 +27,7 @@ A type-safe, schema-first DynamoDB ODM (Object Document Mapper) for TypeScript, 
 
 ### npm (public registry)
 ```
-pnpm add @skadi/dynamo
+pnpm add @skadhi/dynamo
 ```
 
 ### GitHub Packages
@@ -38,7 +38,7 @@ Adicione ao seu `.npmrc`:
 ```
 Instale:
 ```
-pnpm add @skadi/dynamo
+pnpm add @skadhi/dynamo
 ```
 
 ## Quick Start
@@ -46,7 +46,7 @@ pnpm add @skadi/dynamo
 ### 1. Connect to Existing Table
 
 ```typescript
-import { Table, Entity, zdynamo } from '@skadi/dynamo';
+import { Table, Entity, zdynamo } from '@skadhi/dynamo';
 
 // Connect to existing DynamoDB table
 const AppTable = Table
@@ -285,7 +285,7 @@ You can use the `isSkadiDynamoError` type guard to safely handle different types
 ```typescript
 import { 
   isSkadiDynamoError
-} from '@skadi/dynamo';
+} from '@skadhi/dynamo';
 
 const [user, error] = await UserEntity.create().item(invalidData).exec();
 

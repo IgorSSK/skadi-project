@@ -16,33 +16,33 @@ A TypeScript monorepo for Node.js libraries and utilities.
 
 ## 📦 Packages
 
-### Libraries
+ **[@skadhi/dynamo](./packages/dynamo)** - DynamoDB utilities and helpers
 
-- **[@skadi/dynamo](./packages/dynamo)** - DynamoDB utilities and helpers
+**[@skadhi/dynamo](./packages/dynamo)** - DynamoDB utilities and helpers
 
 ## 🛠️ Development
 
 This monorepo uses [pnpm](https://pnpm.io/) for package management and [Turborepo](https://turbo.build/) for build orchestration.
-
+pnpm add --filter @skadhi/dynamo @aws-sdk/client-dynamodb
 ### Prerequisites
 
-- Node.js >= 22.17.1 (LTS)
+pnpm add @skadhi/dynamo
 - pnpm >= 10.13.1
 
 > **Note**: This project uses `.nvmrc` to specify the Node.js version. If you use nvm, run `nvm use` to automatically switch to the correct version.
 
 ### Installation
-
+@skadhi:registry=https://npm.pkg.github.com
 ```bash
 pnpm install
 ```
 
 ### Available Scripts
-
+@skadhi:registry=https://npm.pkg.github.com
 ```bash
 # Build all packages
 pnpm build
-
+pnpm add @skadhi/dynamo
 # Run tests for all packages
 pnpm test
 
@@ -116,7 +116,7 @@ packages/package-name/
 Example:
 ```bash
 # Add dependency to specific package
-pnpm add --filter @skadi/dynamo @aws-sdk/client-dynamodb
+pnpm add --filter @skadhi/dynamo @aws-sdk/client-dynamodb
 
 # Add dev dependency to root
 pnpm add -D -w typescript
@@ -138,7 +138,7 @@ Automações:
 
 Crie/edite um `~/.npmrc` com:
 ```
-@skadi:registry=https://npm.pkg.github.com
+@skadhi:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
 ```
 
@@ -146,11 +146,11 @@ Crie/edite um `~/.npmrc` com:
 
 No seu projeto que usa npm/pnpm/yarn:
 ```
-@skadi:registry=https://npm.pkg.github.com
+@skadhi:registry=https://npm.pkg.github.com
 ```
 Depois instale normalmente:
 ```bash
-pnpm add @skadi/dynamo
+pnpm add @skadhi/dynamo
 ```
 
 ### Passos Manuais (caso precise forçar)
@@ -164,7 +164,7 @@ pnpm release:github       # publica no GitHub Packages
 
 ### Package Naming
 
-- Use scoped packages: `@skadi/package-name`
+- Use scoped packages: `@skadhi/package-name`
 - Use kebab-case for package names
 - Be descriptive but concise
 

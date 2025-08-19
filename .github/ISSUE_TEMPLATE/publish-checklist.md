@@ -1,4 +1,4 @@
-# Publicação de Pacote @skadi/* Checklist
+# Publicação de Pacote @skadhi/* Checklist
 
 Use esta issue para revisar manualmente antes de publicar (caso necessário).
 
@@ -20,5 +20,5 @@ Use esta issue para revisar manualmente antes de publicar (caso necessário).
 ## Publicação
 - [ ] NPM_TOKEN válido no repositório
 - [ ] Workflow de Release executou com sucesso
-- [ ] Pacote aparece em https://www.npmjs.com/org/skadi
+- [ ] Pacote aparece em https://www.npmjs.com/org/skadhi
 - [ ] Pacote aparece em https://github.com/orgs/IgorSSK/packages
