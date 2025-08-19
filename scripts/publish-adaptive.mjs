@@ -7,7 +7,7 @@
 // Build is executed once unless SKADI_SKIP_BUILD=1
 
 import { execSync } from "node:child_process";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const root = resolve(process.cwd());
@@ -47,6 +47,19 @@ for (const { dir, json } of pkgs) {
 	plan[target].push({ name: json.name, dir });
 }
 
+// Detect .npmrc scope overrides that might conflict
+let scopeOverrideWarn = false;
+const npmrcPath = join(root, ".npmrc");
+let npmrcContent = "";
+if (existsSync(npmrcPath)) {
+	try {
+		npmrcContent = readFileSync(npmrcPath, "utf8");
+	} catch {}
+}
+if (npmrcContent.includes("@skadi:registry=") && plan.npm.some((p) => p.name.startsWith("@skadi/"))) {
+	scopeOverrideWarn = true;
+}
+
 console.log("Publish plan:");
 for (const k of Object.keys(plan)) {
 	if (plan[k].length) console.log("  " + k + ": " + plan[k].map((p) => p.name).join(", "));
@@ -77,8 +90,17 @@ if (plan.github.length && !ghToken) {
 	console.warn("Warning: github packages to publish but no GITHUB_TOKEN provided. They may fail.");
 }
 
+if (scopeOverrideWarn) {
+	console.warn(
+		"Notice: .npmrc contains '@skadi:registry' pointing to GitHub; using explicit --registry for npm publishes to override.",
+	);
+}
+
 for (const p of plan.npm) {
-	run("npm publish --access public", { cwd: p.dir, env: { ...process.env, NODE_AUTH_TOKEN: npmToken } });
+	run("npm publish --access public --registry=https://registry.npmjs.org", {
+		cwd: p.dir,
+		env: { ...process.env, NODE_AUTH_TOKEN: npmToken },
+	});
 }
 for (const p of plan.github) {
 	run("npm publish --access public --registry=https://npm.pkg.github.com", {
